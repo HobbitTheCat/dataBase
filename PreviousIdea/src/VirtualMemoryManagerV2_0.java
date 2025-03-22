@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class VirtualMemoryManager {
+public class VirtualMemoryManagerV2_0 {
     private final int pageSize = 4096;
     private final int maxPage;
     private int pageCount;
@@ -23,7 +23,7 @@ public class VirtualMemoryManager {
     private final ConcurrentHashMap<Integer, Integer> pageVersions;
     private final ReentrantLock headerLock = new ReentrantLock();
 
-    public  VirtualMemoryManager(int maxPage, PageSaver saver, PageLoader loader) {
+    public VirtualMemoryManagerV2_0(int maxPage, PageSaver saver, PageLoader loader) {
         this.maxPage = maxPage;
         this.pageCache = new ConcurrentHashMap<>(maxPage);
         this.pageLocks = new ConcurrentHashMap<>();

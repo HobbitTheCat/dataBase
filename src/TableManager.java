@@ -1,15 +1,14 @@
 import Pages.*;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class TableManager {
     private final int pageSize = 4096;
-    private final VirtualMemoryManager vMM;
+    private final VirtualMemoryManagerV2_0 vMM;
 
-    public TableManager(VirtualMemoryManager vMM) {
+    public TableManager(VirtualMemoryManagerV2_0 vMM) {
         this.vMM = vMM;
     }
 

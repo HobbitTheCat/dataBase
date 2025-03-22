@@ -2,7 +2,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class FilePageLoader implements VirtualMemoryManager.PageLoader{
+public class FilePageLoader implements VirtualMemoryManagerV2_0.PageLoader{
     private final String filePath;
     private final int pageSize = 4096;
 

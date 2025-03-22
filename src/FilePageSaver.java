@@ -3,7 +3,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class FilePageSaver implements VirtualMemoryManager.PageSaver{
+public class FilePageSaver implements VirtualMemoryManagerV2_0.PageSaver{
     private final String filePath;
     private final int pageSize = 4096;
 
