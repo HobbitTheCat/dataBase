@@ -1,8 +1,8 @@
 package Pages;
-
+import Interface.*;
 import java.nio.ByteBuffer;
 
-public class ObjectPage extends Page{
+public class ObjectPage extends Page implements DataPage<Address[]>{
     private final short objectLength; //number of attributes
     private static final short linkSize = 6;
     private static final short type = 1;
@@ -17,10 +17,16 @@ public class ObjectPage extends Page{
         this.objectLength = objectLength;
     }
 
-    public Address[] get(short offset) {
-        if(offset > this.getOnPageObjectNumber()) throw new IndexOutOfBoundsException("offset out of bounds");
+    @Override
+    public short size(){
+        return this.getOnPageObjectNumber();
+    }
+
+    @Override
+    public Address[] get(short index) {
+        if(index > this.getOnPageObjectNumber()) throw new IndexOutOfBoundsException("index out of bounds");
         Address[] result = new Address[this.objectLength];
-        this.setCursor(offset*this.objectLength*ObjectPage.linkSize);
+        this.setCursor(index*this.objectLength*ObjectPage.linkSize);
         for(int i = 0; i < this.objectLength; i++)
             result[i] = this.readAddress();
         return result;
@@ -32,6 +38,12 @@ public class ObjectPage extends Page{
         if (freeAddress == -1) throw new IndexOutOfBoundsException("Free address not found");
         for (Address objectLink : objectLinks) this.writeAddress(objectLink);
         return this.getIndexByOffset(freeAddress);
+    }
+
+    @Override
+    public void delete(short index) {
+        if(index > this.getOnPageObjectNumber()) throw new IndexOutOfBoundsException("index out of bounds");
+        this.releaseOffset((short) (index*(this.objectLength*ObjectPage.linkSize)));
     }
 
     @Override

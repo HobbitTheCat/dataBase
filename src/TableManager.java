@@ -2,6 +2,7 @@ import Pages.*;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class TableManager {
@@ -12,24 +13,20 @@ public class TableManager {
         this.vMM = vMM;
     }
 
-    private Page readPage(int pageIndex, int type) {
-        ByteBuffer pageData = this.vMM.loadPage(pageIndex);
-        return switch (pageData.getShort(0)) {
-            case 0 -> new MetaPage(pageData, pageIndex);
-            case 1 -> new ObjectPage(pageData, pageData.getShort(8), pageIndex);
-            case 2 -> new StringPage(pageData, pageIndex);
-            default -> null;
-        };
+    private Page readPage(int pageIndex) {
+//        ByteBuffer pageData = this.vMM.loadPage(pageIndex);
+//        return PageFactory.createPage(pageData, pageIndex);
+        return new HeaderPage(0);
     }
 
     private DataClass searchClass(String className){
-        MetaPage metaPage = (MetaPage) this.readPage(0, 0);
+        MetaPage metaPage = (MetaPage) this.readPage(0);
         DataClass data;
         do{
             data = metaPage.getClassByName(className);
             if (data != null) return data;
-            metaPage = (MetaPage) this.readPage(metaPage.getNextPage(), 0);
-        }while(metaPage != null && metaPage.getNextPage() != -1);
+            metaPage = (MetaPage) this.readPage(metaPage.getNextPage());
+        }while(metaPage.getNextPage() != -1);
         return null;
     }
 
@@ -38,18 +35,28 @@ public class TableManager {
         // └> list of object └> name  └> value
         DataClass classInfo = this.searchClass(className);
         if(classInfo == null) return null;
-        for(int i = 0; i < classInfo.getAttributesNames().length; i++){
-            Page page;
-            do {
-                page = this.readPage(classInfo.getAttributePageByName(classInfo.getAttributesNames()[i]), 1);
-                if (page == null) return null;
-                if (page.getType() == 2){
-                    for (int j = 0; j < page.getOnPageObjectNumber(); j++) {
 
-                    }
+        ArrayList<Map<String, Object>> result = new ArrayList<>();
+        int objectPageIndex = classInfo.getObjectPage();
+
+        while(objectPageIndex != -1){
+            ObjectPage objectPage = (ObjectPage) this.readPage(objectPageIndex);
+            for(short i = 0; i < objectPage.size(); i++){
+                Map<String, Object> data = new HashMap<>();
+                Address[] attributeAddresses = objectPage.get(i);
+                for(int j = 0; j < attributeAddresses.length; j++){
+                    String attrName = classInfo.getAttributesNames()[j];
+                    int attrPageIndex = attributeAddresses[j].getPageNumber();
+                    Page attrPage = this.readPage(attrPageIndex);
+                    Object value = null;
+                    if(attrPage instanceof StringPage sp) value = sp.get(attributeAddresses[j].getOffset()); // так тут явно не offset а index, // так что нужно переписать класс DataClass и все места гже он создается
+                    data.put(attrName, value);
                 }
-            }while (page.getNextPage() != -1);
+                result.add(data);
+            }
+            objectPageIndex = objectPage.getNextPage();
         }
+        return result;
     }
 
 }

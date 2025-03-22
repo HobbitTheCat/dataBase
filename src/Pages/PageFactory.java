@@ -9,6 +9,8 @@ public class PageFactory {
             case 0 -> {yield new MetaPage(buffer, pageIndex);}
             case 1 -> {yield new ObjectPage(buffer, buffer.getShort(8), pageIndex);}
             case 2 -> {yield new StringPage(buffer, pageIndex);}
+            case 99 -> {yield  new FreePage(buffer, pageIndex);}
+            case 100 -> {yield  new HeaderPage(buffer, pageIndex);}
             default -> throw new IllegalArgumentException("Unknown PageType: " + type);
         };
     }

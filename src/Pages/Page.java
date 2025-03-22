@@ -1,6 +1,19 @@
 package Pages;
+import Interface.*;
 import java.nio.ByteBuffer;
 
+
+/**
+ * Name of class: Page
+ * <p>
+ * Description: parent class representing the interface for interacting with pages (minimum amount of information stored)
+ * <p>
+ * Version: 2.5
+ * <p>
+ * Date 03/17
+ * <p>
+ * Copyright: Semenov Egor
+ */
 public abstract class Page {
     /**
      * Meta Info:<p>
@@ -19,27 +32,38 @@ public abstract class Page {
     private static final short freePageSize =  Page.pageSize - metaInfoSize;
     private final int pageNumber;
     public short dataSize;
-    private boolean isDirty = false;
     private final ByteBuffer data;
 
+    /**
+     *Getters
+     */
     public short getType(){return this.data.getShort(0);}
     public int getPageNumber(){return this.pageNumber;}
     public int getNextPage(){return this.data.getInt(2);}
     protected short getFirstFree(){return this.data.getShort(6);}
-    public boolean isDirty(){return this.isDirty;}
 
-    protected int getIndexByOffset(int offset){return offset/this.dataSize;}
-    public int getOnPageObjectNumber(){return (Page.freePageSize + 1)/this.dataSize;}
+    protected short getIndexByOffset(int offset){return (short)(offset/this.dataSize);}
+    protected short getOnPageObjectNumber(){return (short) ((Page.freePageSize + 1)/this.dataSize);}
 
     private void setFirstFree(short firstFreeOffset){this.data.putShort(6, firstFreeOffset);}
     public void setNextPage(int page){this.data.putInt(2, page);}
+    private void setDataSize(short dataSize){this.data.putShort(8, dataSize);}
+    public ByteBuffer getData(){return this.data;}
+
+    /**
+     *This is a very important section,
+     *it is the method because of which I rewrote this class,
+     * it allows not to take into account the meta information of the page when writing links,
+     * which saves the code from magic numbers
+     */
     protected void setCursor(int cursor){
         if(cursor + Page.metaInfoSize <= Page.pageSize){
             this.data.position(cursor + Page.metaInfoSize);
         } else throw new IndexOutOfBoundsException("Tried to put cursor on " + cursor + " + " + Page.metaInfoSize);
     }
-    public void makeDirty(){this.isDirty =  true;}
-
+    /**
+     *Reading data from ByteBuffer with automatic cursor movement
+     */
     protected byte[] readBytes(short length){
         byte[] result = new byte[length];
         this.data.get(result);
@@ -50,6 +74,9 @@ public abstract class Page {
     protected short readShort(){return this.data.getShort();}
     protected Address readAddress(){return new Address(this.readInteger(), this.readShort());}
 
+    /**
+     * Writing data to ByteBuffer with automatic cursor movement
+     */
     protected void writeInteger(int value){this.data.putInt(value);}
     protected void writeLong(long value){this.data.putLong(value);}
     protected void writeShort(short value){this.data.putShort(value);}
@@ -59,10 +86,18 @@ public abstract class Page {
         this.data.putShort(address.getOffset());
     }
 
+    /**
+     *Constructors
+     * This constructor is needed to create an empty page with initial initialization of links to free spaces
+     *
+     * @param dataSize if -1 -> dynamic data size
+     */
     public Page(short type, short dataSize, int pageNumber){
-        this.pageNumber = pageNumber;
-        this.dataSize = dataSize;
         this.data = ByteBuffer.allocate(Page.pageSize);
+        this.pageNumber = pageNumber;
+        this.setDataSize(dataSize);
+        if(dataSize == -1) this.dataSize = (short) (Page.freePageSize - 4);
+        else this.dataSize = dataSize;
         this.writeShort(type);
         this.setNextPage(-1);
         this.setFirstFree((short) 0);
@@ -87,20 +122,35 @@ public abstract class Page {
         }
     }
 
-    public Page (short type, int pageNumber){
-        this(type, (short) (Page.freePageSize - 4), pageNumber);
-    }
+    /**
+     *Constructor for creating a page with dynamic size of elements (MetaPage)
+     */
+//    public Page (short type, int pageNumber){
+//        this(type, (short) (Page.freePageSize - 4), pageNumber);
+//    }
 
+    /**
+     * Creating a page from ByteBuffer (as in case of reading from disk)
+     */
     public Page (ByteBuffer data, short dataSize, int pageNumber){
         this.pageNumber = pageNumber;
         this.dataSize = dataSize;
         this.data = data;
     }
 
+    /**
+     * Same, but for page with dynamic size of elements.
+     */
     public Page (ByteBuffer data, int pageNumber){
         this(data, (short) (Page.freePageSize - 4), pageNumber);
     }
 
+    /**
+     * Main functions
+     * Function for free space allocation (searches for the first free space and rewrites pointers)
+     * @param sizeNeeded the size of the required area for data placement
+     *
+     */
     protected short getNextFreeOffset(int sizeNeeded){
         short freeOffset = this.getFirstFree(); //0
         if(freeOffset < 0 || freeOffset + 4 > Page.freePageSize) return -1;
@@ -126,6 +176,10 @@ public abstract class Page {
         return -1;
     }
 
+    /**
+     * Function for freeing up space (in case of deleting information)
+     * @param offset offset of space that need to be free.
+     */
     protected void releaseOffset(short offset){
         this.setCursor(offset);
         short firstFree = this.getFirstFree();
@@ -143,6 +197,10 @@ public abstract class Page {
 //    public Page duplicate(){
 //        return new Page(this.data.duplicate(), this.dataSize, this.pageNumber);
 //    }
+
+    /**
+     * Additional functions
+     */
 
     protected StringBuilder metaInfoString(int length) {
         StringBuilder metaInfo = new StringBuilder();
@@ -185,21 +243,10 @@ public abstract class Page {
     }
 }
 
-interface DataPage<Type>{
-    Type get(int index);
-    void delete(int index);
-
-    String toString();
-}
-
-interface BackLinkPage<Type> extends DataPage<Type>{
-    int add(Type value, Address address);
-    int replace(int index, Type newValue, Address newAddress);
-    int replaceSamePlace(int index, Type newValue, Address newAddress);
-}
-
-interface MetaDataPage{
-    DataClass getClassByName(String className);
-    DataClass getClassByOffset(int offset);
-    int add(DataClass dataClass);
-}
+/**
+ * Interfaces
+ * <p>
+ * DataPage - interface for StringPage, ObjectPage, IntPage
+ * BackLinkPage - interface for StringPage, IntPage define add and replace, with back address of parent objects
+ * MetaDataPage - interface for MetaPage
+ */

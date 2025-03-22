@@ -1,9 +1,11 @@
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public class FilePageSaver implements VirtualMemoryManager.PageSaver{
     private final String filePath;
+    private final int pageSize = 4096;
 
     public FilePageSaver(String filePath){
         this.filePath = filePath;
@@ -18,5 +20,16 @@ public class FilePageSaver implements VirtualMemoryManager.PageSaver{
             data.rewind();
             channel.write(data);
         }catch(Exception e){ throw new RuntimeException("Error saving file page: ",e); }
+    }
+
+    public void expandFileIfNeeded(int totalPage) {
+        try (RandomAccessFile file = new RandomAccessFile(filePath, "rw")) {
+            long expectedSize = ((long) totalPage + 1) * pageSize;
+            if (file.length() < expectedSize) {
+                file.setLength(expectedSize); // OS-level увеличение файла
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

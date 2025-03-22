@@ -8,7 +8,7 @@ import Pages.*;
 public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
-//        objectPageTest();
+        objectPageTest();
 //        metaPageTest();
     }
 
@@ -16,7 +16,7 @@ public class Main {
         DataClass dc = new DataClass(1, "City", new String[]{"name", "capacity", "country"}, new int[]{2,3,4});
         MetaPage mp =  new MetaPage(0);
         System.out.println(mp);
-        mp.createClass(dc);
+        mp.add(dc);
         System.out.println(mp);
         DataClass out = mp.getClassByName("City");
         System.out.println(out);
@@ -33,24 +33,24 @@ public class Main {
 
     public static void stringPageTest(){
         StringPage sp = new StringPage(10);
-        sp.getStringByIndex(0);
-        int index = sp.putString("Hello World!", new Address(1, 0));
-        int index2 = sp.putString("My database is working", new Address(1, 1));
+        sp.get((short) 0);
+        short index = sp.add("Hello World!", new Address(1, 0));
+        int index2 = sp.add("My database is working", new Address(1, 1));
 
-        String result = sp.getStringByIndex(index);
+        String result = sp.get((short) index);
         Object []  resultArray = sp.getStringByIndexWithMeta(index2);
 
         System.out.println("Extracted string: " + result);
         System.out.println("Extracted string: {ObjectPage: " + resultArray[0] +  ", Value: " + resultArray[1] + "}");
         System.out.println(sp);
 
-        sp.replaceString(index, "New String", new Address(1, 0));
+        sp.replace(index, "New String", new Address(1, 0));
         System.out.println(sp);
 
-        sp.deleteString(index);
+        sp.delete(index);
         System.out.println(sp);
 
-        sp.replaceString(index, "New String", new Address(1, 0));
+        sp.replace(index, "New String", new Address(1, 0));
         System.out.println(sp);
     }
 }

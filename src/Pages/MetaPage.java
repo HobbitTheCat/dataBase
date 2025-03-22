@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
+import Interface.*;
 
 //похоже нужно каждому листу присваивать его адрес, что бы можно было бы передать лист в качестве параметра
 //при чем хранить индекс нужно в супер классе, что бы можно было в Address сменить pageNumber просто на Page, тогда можно будет еще и ти запрашивать
@@ -16,7 +16,7 @@ import java.util.Map;
 //Варианты решения:
 //Сначала создаем объект, в ObjectPage, а затем добавляем атрибуты.
 
-public class MetaPage extends Page{
+public class MetaPage extends Page implements MetaDataPage{
     /**
      * Meta info object (before parameters):
      * <ul>
@@ -41,10 +41,10 @@ public class MetaPage extends Page{
     private static final short linkSize = 4;
 
     public MetaPage(ByteBuffer buffer, int pageNumber) {super(buffer, pageNumber);}
-    public MetaPage(int pageNumber){super(MetaPage.type, pageNumber);}
+    public MetaPage(int pageNumber){super(MetaPage.type, (short) -1, pageNumber);}
 
 
-    public short createClass(DataClass dataClass){
+    public short add(DataClass dataClass){
         if(this.getClassOffsetByName(dataClass.getName()) != -1) throw new RuntimeException("Class " + dataClass.getName() + " already exists");
         byte[] name = dataClass.getName().getBytes(StandardCharsets.UTF_8);
         if(name.length > MetaPage.stringSize) throw new IllegalArgumentException("Class name is too long");
