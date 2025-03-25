@@ -1,8 +1,8 @@
-public class BiteMap {
+public class BitMap {
     private final long[] map;
     private final int totalSlots;
 
-    public BiteMap(int totalSlots) {
+    public BitMap(int totalSlots) {
         this.totalSlots = totalSlots;
         this.map = new long[(this.totalSlots + 63)/64];
     }

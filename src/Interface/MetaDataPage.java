@@ -1,9 +1,9 @@
 package Interface;
 
-import Pages.DataClass;
+import TableManager.TableDescription;
 
 public interface MetaDataPage{
-    DataClass getClassByName(String className);
-    DataClass getClassByOffset(short offset);
-    short add(DataClass dataClass);
+    TableDescription getClassByName(String className);
+    TableDescription getClassByOffset(short offset);
+    short add(TableDescription dataClass);
 }

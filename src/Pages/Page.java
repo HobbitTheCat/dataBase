@@ -1,6 +1,7 @@
 package Pages;
-import Interface.*;
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /**
@@ -27,10 +28,23 @@ public abstract class Page {
      *  currentFreeSize - 2 bytes;
      */
 
-    private static final short metaInfoSize = 10;
-    private static final short pageSize = 4096; //4088
-    private static final short freePageSize =  Page.pageSize - metaInfoSize;
+    //Resource
     private final int pageNumber;
+    private volatile Thread owner = null;
+    private final Lock lock = new ReentrantLock();
+    private boolean isDirty = false;
+
+    public void lock(){this.lock.lock();}
+    public void unlock(){this.lock.unlock();}
+    public Thread getOwner(){return this.owner;}
+    public void setOwner(Thread owner){this.owner = owner;}
+    private void setDirty(){this.isDirty = true;}
+    public boolean isDirty(){return this.isDirty;}
+
+
+    private static final short metaInfoSize = 10;
+    private static final short pageSize = 4096;
+    protected static final short freePageSize =  Page.pageSize - metaInfoSize; //4088
     public short dataSize;
     private final ByteBuffer data;
 
@@ -61,6 +75,7 @@ public abstract class Page {
             this.data.position(cursor + Page.metaInfoSize);
         } else throw new IndexOutOfBoundsException("Tried to put cursor on " + cursor + " + " + Page.metaInfoSize);
     }
+    public void setData(ByteBuffer data){this.data.put(data);}
     /**
      *Reading data from ByteBuffer with automatic cursor movement
      */
@@ -77,13 +92,14 @@ public abstract class Page {
     /**
      * Writing data to ByteBuffer with automatic cursor movement
      */
-    protected void writeInteger(int value){this.data.putInt(value);}
-    protected void writeLong(long value){this.data.putLong(value);}
-    protected void writeShort(short value){this.data.putShort(value);}
-    protected void writeBytes(byte[] value){this.data.put(value);}
+    protected void writeInteger(int value){this.data.putInt(value); this.setDirty();}
+    protected void writeLong(long value){this.data.putLong(value); this.setDirty();}
+    protected void writeShort(short value){this.data.putShort(value); this.setDirty();}
+    protected void writeBytes(byte[] value){this.data.put(value); this.setDirty();}
     protected void writeAddress(Address address){
         this.data.putInt(address.getPageNumber());
         this.data.putShort(address.getOffset());
+        this.setDirty();
     }
 
     /**
@@ -194,10 +210,6 @@ public abstract class Page {
         this.releaseOffset(offset);
     }
 
-//    public Page duplicate(){
-//        return new Page(this.data.duplicate(), this.dataSize, this.pageNumber);
-//    }
-
     /**
      * Additional functions
      */
@@ -242,11 +254,3 @@ public abstract class Page {
         return pageString.toString();
     }
 }
-
-/**
- * Interfaces
- * <p>
- * DataPage - interface for StringPage, ObjectPage, IntPage
- * BackLinkPage - interface for StringPage, IntPage define add and replace, with back address of parent objects
- * MetaDataPage - interface for MetaPage
- */

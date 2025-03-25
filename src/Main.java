@@ -1,25 +1,27 @@
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
 import Pages.*;
+import TableManager.TableDescription;
 
 public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
-        objectPageTest();
-//        metaPageTest();
+//        objectPageTest();
+        metaPageTest();
     }
 
     public static void metaPageTest(){
-        DataClass dc = new DataClass(1, "City", new String[]{"name", "capacity", "country"}, new int[]{2,3,4});
+        TableDescription dc1 = new TableDescription(1, "City", new String[]{"name", "capacity", "country"}, new int[]{2,3,4});
+        TableDescription dc2 = new TableDescription(5, "Person", new String[]{"name", "age", "gender"}, new int[]{6,7,8});
         MetaPage mp =  new MetaPage(0);
         System.out.println(mp);
-        mp.add(dc);
+        mp.add(dc1);
+        mp.add(dc2);
         System.out.println(mp);
-        DataClass out = mp.getClassByName("City");
-        System.out.println(out);
+        System.out.println(mp.getClassByName("City"));
+        mp.deleteClassByName("City");
+        System.out.println(mp);
+        System.out.println(mp.getClassByName("Person"));
+        mp.add(dc1);
+        System.out.println(mp);
     }
 
     public static void objectPageTest(){

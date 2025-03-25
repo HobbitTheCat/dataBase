@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import Interface.*;
+import TableManager.TableDescription;
 
 //похоже нужно каждому листу присваивать его адрес, что бы можно было бы передать лист в качестве параметра
 //при чем хранить индекс нужно в супер классе, что бы можно было в Address сменить pageNumber просто на Page, тогда можно будет еще и ти запрашивать
@@ -44,26 +45,28 @@ public class MetaPage extends Page implements MetaDataPage{
     public MetaPage(int pageNumber){super(MetaPage.type, (short) -1, pageNumber);}
 
 
-    public short add(DataClass dataClass){
-        if(this.getClassOffsetByName(dataClass.getName()) != -1) throw new RuntimeException("Class " + dataClass.getName() + " already exists");
+    public short add(TableDescription dataClass){
+        if(this.getClassOffsetByName(dataClass.getName()) != -1) throw new IllegalArgumentException("Table " + dataClass.getName() + " already exists");
         byte[] name = dataClass.getName().getBytes(StandardCharsets.UTF_8);
-        if(name.length > MetaPage.stringSize) throw new IllegalArgumentException("Class name is too long");
+        if(name.length > MetaPage.stringSize) throw new IllegalArgumentException("Table name is too long");
         byte[] bytes = new byte[MetaPage.stringSize];
         Arrays.fill(bytes, (byte)' ');
         System.arraycopy(name, 0, bytes, 0, name.length);
         byte[][]  attriBytes = new byte[dataClass.getAttributesNames().length][];
         for(int i = 0; i < dataClass.getAttributesNames().length; i++){
             byte[] nameBytes = dataClass.getAttributesNames()[i].getBytes(StandardCharsets.UTF_8);
-            if(nameBytes.length > MetaPage.stringSize) throw new IllegalArgumentException("Attribute" + dataClass.getAttributesNames()[i] + "name is too long");
+            if(nameBytes.length > MetaPage.stringSize) throw new IllegalArgumentException("Attribute " + dataClass.getAttributesNames()[i] + "name is too long");
             attriBytes[i] = new byte[MetaPage.stringSize];
             Arrays.fill(attriBytes[i], (byte) ' ');
             System.arraycopy(nameBytes, 0, attriBytes[i], 0, nameBytes.length);
         }
         short classLength = (short)(MetaPage.metaInfoSize + dataClass.getAttributesNames().length * (MetaPage.stringSize + MetaPage.linkSize));
+        if(classLength > Page.freePageSize) throw new IllegalArgumentException("Table is too long");
         short offset = this.getNextFreeOffset(classLength);
-        this.writeShort(classLength);
-        this.writeShort((short)(dataClass.getAttributesNames().length));
-        this.writeInteger(dataClass.getObjectPage());
+        if(offset < 0) return -1;
+        this.writeShort(classLength); // length
+        this.writeShort((short)(dataClass.getAttributesNames().length)); // parameterNumber
+        this.writeInteger(dataClass.getObjectPage()); // objectPage
         this.writeBytes(bytes);
         for(int i = 0; i < dataClass.getAttributesNames().length; i++){
             this.writeBytes(attriBytes[i]);
@@ -72,13 +75,13 @@ public class MetaPage extends Page implements MetaDataPage{
         return offset;
     }
 
-    public DataClass getClassByName(String className){
-        short offset = getClassOffsetByName(className);
+    public TableDescription getClassByName(String className){
+        short offset = this.getClassOffsetByName(className);
         if(offset == -1) return null;
         return this.getClassByOffset(offset);
     }
 
-    public DataClass getClassByOffset(short offset){
+    public TableDescription getClassByOffset(short offset){
         this.setCursor(offset);
         this.readShort();
         short paramNumber = this.readShort();
@@ -91,7 +94,15 @@ public class MetaPage extends Page implements MetaDataPage{
             attributeNames[i] = new String(this.readBytes(MetaPage.stringSize), StandardCharsets.UTF_8).trim();
             attributesPages[i] = this.readInteger();
         }
-        return new DataClass(page, className, attributeNames, attributesPages);
+        return new TableDescription(page, className, attributeNames, attributesPages);
+    }
+
+    public boolean deleteClassByName(String className){
+        short offset = this.getClassOffsetByName(className);
+        if(offset == -1) return false; // do while delete == false or getNextPage = -1
+        this.setCursor(offset + 2);
+        this.releaseOffset(offset, (short)(MetaPage.metaInfoSize + this.readShort() * (MetaPage.stringSize + MetaPage.linkSize)));
+        return true;
     }
 
     public short getClassOffsetByName(String className){
@@ -101,7 +112,7 @@ public class MetaPage extends Page implements MetaDataPage{
             while(sum < nextFree){
                 this.setCursor(sum); //0
                 short add = this.readShort();
-                this.setCursor(sum);
+                this.setCursor(sum + 8);
                 if(className.equals(new String(this.readBytes(MetaPage.stringSize), StandardCharsets.UTF_8).trim()))
                     return sum;
                 sum += add;
@@ -127,7 +138,7 @@ public class MetaPage extends Page implements MetaDataPage{
             while(sum < nextFree){ //скорее всего ломается, если между занятым и следующим блоком есть небольшой зазор
                 this.setCursor(sum);
                 short length = this.readShort();
-                StringBuilder builder = resolveMetaInfo(sum);
+                StringBuilder builder = this.resolveMetaInfo(sum);
                 if(builder.length() > maxLength) maxLength = builder.length();
                 rows.add(builder);
                 sum += length;
@@ -135,7 +146,6 @@ public class MetaPage extends Page implements MetaDataPage{
 
             StringBuilder builder = new StringBuilder();
             this.setCursor(nextFree);
-            System.out.println("Cursor set on: " + nextFree);
             nextFree = this.readShort();
             short currentFreeLength = this.readShort();
             sum += currentFreeLength;

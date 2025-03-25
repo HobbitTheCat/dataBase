@@ -1,3 +1,5 @@
+package PreviousMemoryManagers;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -22,7 +24,7 @@ public class Pager {
 
     public ByteBuffer getPage(int pageNumber) {
         if (!isValid) {
-            System.err.println("Pager is not valid. File could not be opened.");
+            System.err.println("PreviousMemoryManagers.Pager is not valid. File could not be opened.");
             return null;
         }
         try {
@@ -50,7 +52,7 @@ public class Pager {
 
     public void writePage(int pageNumber, ByteBuffer page) {
         if (!isValid) {
-            System.err.println("Pager is not valid. File could not be opened.");
+            System.err.println("PreviousMemoryManagers.Pager is not valid. File could not be opened.");
             return;
         }
 

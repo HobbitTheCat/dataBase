@@ -1,9 +1,11 @@
+package PageManager;
+
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class FilePageSaver implements VirtualMemoryManagerV2_0.PageSaver{
+public class FilePageSaver implements MemoryManager.PageSaver{
     private final String filePath;
     private final int pageSize = 4096;
 

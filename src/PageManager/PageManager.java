@@ -1,48 +1,56 @@
 package PageManager;
 
+import Pages.Page;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- *  A resource management system with deadlock prevention and the ability to expand the resource zone
- */
-public class ResourceManager {
-    // Dependency graph for expectation tracking
-    private final Map<Thread, Set<Resource>> threadToResourcesHeld;
-    private final Map<Thread, Set<Resource>> threadToResourcesWaiting;
+public class PageManager {
+    private final Map<Thread, Set<Page>> threadToResourcesHeld;
+    private final Map<Thread, Set<Page>> threadToResourcesWaiting;
+
     // To synchronize access to the graph
     private final Lock graphLock = new ReentrantLock();
+
     // Condition for notification of waiting flows
     private final Condition resourceReleased = graphLock.newCondition();
+    private final MemoryManager memoryManager;
 
-    public ResourceManager() {
+    public PageManager(MemoryManager memoryManager) {
         this.threadToResourcesHeld = new HashMap<>();
         this.threadToResourcesWaiting = new HashMap<>();
+        this.memoryManager = memoryManager;
     }
 
     /**
      * Request for multiple resources with deadlock and retry prevention
-     * @param requestedResources list of requested resources
+     * @param requestedResourcesIndexes list of requested page indexes
      * @param maxRetries maximum number of retries (-1 for infinite retries)
      * @param retryDelayMs delay between retries in milliseconds
-     * @return true if the resources were successfully retrieved, false if the number of attempts is exhausted
+     * @return List<Page> which can be used later on higher levels
      * @throws InterruptedException if the thread was interrupted while waiting
      */
-    public boolean acquireResources(List<Resource> requestedResources, int maxRetries, long retryDelayMs) throws InterruptedException {
+    public List<Page> acquireResources(List<Integer> requestedResourcesIndexes, int maxRetries, long retryDelayMs) throws InterruptedException{
+        List<Page> requestedResources = this.memoryManager.indexesToPages(requestedResourcesIndexes);
+        if (this.acquireResourcePrivate(requestedResources, maxRetries, retryDelayMs)) return requestedResources;
+        return null;
+    }
+
+    private boolean acquireResourcePrivate(List<Page> requestedResources, int maxRetries, long retryDelayMs) throws InterruptedException {
         Thread currentThread = Thread.currentThread(); //save the current thread
 
         // Sort resources by ID to prevent deadlock (resource ordering strategy)
-        requestedResources.sort(Comparator.comparingInt(Resource::getId));
+        requestedResources.sort(Comparator.comparingInt(Page::getPageNumber));
 
         int retries = 0;
         boolean acquired = false; // while haven't gotten
 
         while (!acquired && (maxRetries == -1 || retries <= maxRetries)) {
             if (retries > 0) {System.out.println(currentThread.getName() + ": retry #" + retries +
-                        " to get resources " + this.formatResourceIds(requestedResources));
+                    " to get resources " + this.formatResourceIds(requestedResources));
             }
 
             acquired = this.tryAcquireResources(requestedResources); //try to get resources, returns status
@@ -60,7 +68,7 @@ public class ResourceManager {
                         this.resourceReleased.await(retryDelayMs, TimeUnit.MILLISECONDS);
 
                         // We remove from the waiting list for correct operation of the loop detection algorithm
-//                        this.threadToResourcesWaiting.get(currentThread).removeAll(requestedResources);
+                        // this.threadToResourcesWaiting.get(currentThread).removeAll(requestedResources);
                         requestedResources.forEach(this.threadToResourcesWaiting.get(currentThread)::remove);
                     } finally {
                         this.graphLock.unlock();
@@ -78,22 +86,22 @@ public class ResourceManager {
     /**
      * A simplified version of the method for obtaining resources with infinite attempts
      */
-    public boolean acquireResources(List<Resource> requestedResources) throws InterruptedException {
-        return this.acquireResources(requestedResources, -1, 500);
+    public List<Page> acquireResources(List<Integer> requestedResourcesIndexes) throws InterruptedException {
+        return this.acquireResources(requestedResourcesIndexes, -1, 500);
     }
 
     /**
      * Simplified version of the method for obtaining resources with a limited number of attempts
      */
-    public boolean acquireResourcesWithTimeout(List<Resource> requestedResources, int maxRetries, long timeoutMs)
+    public List<Page> acquireResourcesWithTimeout(List<Integer> requestedResourcesIndexes, int maxRetries, long timeoutMs)
             throws InterruptedException {
-        return this.acquireResources(requestedResources, maxRetries, timeoutMs / (maxRetries + 1));
+        return this.acquireResources(requestedResourcesIndexes, maxRetries, timeoutMs / (maxRetries + 1));
     }
 
     /**
      * Internal method for a one-time attempt to obtain all resources
      */
-    private boolean tryAcquireResources(List<Resource> requestedResources) {
+    private boolean tryAcquireResources(List<Page> requestedPages) {
         Thread currentThread = Thread.currentThread();
 
         this.graphLock.lock();
@@ -101,8 +109,8 @@ public class ResourceManager {
             // Register a thread if it is not already registered
             this.threadToResourcesHeld.putIfAbsent(currentThread, new HashSet<>());
 
-            // Let's check if a loop (deadlock) will not form if we add these expectations
-            if (this.wouldFormCycle(currentThread, requestedResources)) {
+            // Checks if a loop (deadlock) will not form if it adds these expectations
+            if (this.wouldFormCycle(currentThread, requestedPages)) {
                 // If a loop is formed, deny the request
                 return false;
             }
@@ -111,44 +119,44 @@ public class ResourceManager {
         }
 
         boolean acquired = true;
-        List<Resource> acquiredResources = new ArrayList<>();
+        List<Page> acquiredResources = new ArrayList<>();
 
         try {
             // Trying to grab resources one at a time
-            for (Resource resource : requestedResources) {
-                resource.lock();
-                if (resource.getOwner() != null && resource.getOwner() != currentThread) {
+            for (Page page : requestedPages) {
+                page.lock();
+                if (page.getOwner() != null && page.getOwner() != currentThread) {
                     // The resource has already been taken up by another thread
                     acquired = false;
                     break;
                 }
-                if (resource.getOwner() != currentThread) {
+                if (page.getOwner() != currentThread) {
                     // Capture only those resources we don't already own
-                    resource.setOwner(currentThread);
-                    acquiredResources.add(resource);
+                    page.setOwner(currentThread);
+                    acquiredResources.add(page);
                 }
             }
         } finally {
             if (!acquired) {
                 // If it was not possible to get all the resources, release the resources already obtained
-                for (Resource resource : acquiredResources) {
-                    resource.setOwner(null);
-                    resource.unlock();
+                for (Page page : acquiredResources) {
+                    page.setOwner(null);
+                    page.unlock();
                 }
             } else {
                 // If successful, we release only the locks, retaining possession of the resources
-                for (Resource resource : requestedResources) {
-                    resource.unlock();
+                for (Page page : requestedPages) {
+                    page.unlock();
                 }
             }
             // adding the received resources to the graph
-            this.graphLock.lock();
-            try {
-                if (acquired) {
-                    this.threadToResourcesHeld.get(currentThread).addAll(requestedResources);
+            if (acquired) {
+                this.graphLock.lock();
+                try {
+                    this.threadToResourcesHeld.get(currentThread).addAll(requestedPages);
+                } finally {
+                    this.graphLock.unlock();
                 }
-            } finally {
-                this.graphLock.unlock();
             }
         }
 
@@ -157,42 +165,44 @@ public class ResourceManager {
 
     /**
      * Resource zone expansion - obtaining additional resources by holding the existing ones
-     * @param additionalResources list of additional resources to get
+     * @param additionalPagesIndexes list of additional resources to get
      * @param maxRetries maximum number of retries
      * @param retryDelayMs delay between retries in milliseconds
-     * @return true if additional resources were successfully retrieved
+     * @return List of additional pages if additional resources were successfully retrieved
      * @throws InterruptedException if the thread was interrupted while waiting
      */
-    public boolean expandResourceZone(List<Resource> additionalResources, int maxRetries, long retryDelayMs)
+    public List<Page> expandResourceZone(List<Integer> additionalPagesIndexes, int maxRetries, long retryDelayMs)
             throws InterruptedException {
+        List<Page> additionalPages = this.memoryManager.indexesToPages(additionalPagesIndexes);
+
         Thread currentThread = Thread.currentThread();
-        List<Resource> actuallyNeeded = new ArrayList<>();
+        List<Page> actuallyNeeded = new ArrayList<>();
 
         this.graphLock.lock();
-        Set<Resource> currentlyHeld;
+        Set<Page> currentlyHeld;
         try {
             // Check if the thread already has any resources
             currentlyHeld = this.threadToResourcesHeld.getOrDefault(currentThread, new HashSet<>());
             if (currentlyHeld.isEmpty()) {
                 System.out.println(currentThread.getName() + ": attempting to expand the zone without owning the resources");
-                return false;
+                return null; // exception may be needed
             }
 
             // Remove from the list of requested resources those resources that the thread is already holding
 
-            for (Resource resource : additionalResources) {
-                if (!currentlyHeld.contains(resource)) {
-                    actuallyNeeded.add(resource);
+            for (Page page : additionalPages) {
+                if (!currentlyHeld.contains(page)) {
+                    actuallyNeeded.add(page);
                 }
             }
 
             if (actuallyNeeded.isEmpty()) {
                 // All requested resources already belong to the stream
-                return true;
+                return actuallyNeeded;
             }
 
             // Sort by ID to prevent deadlocks
-            actuallyNeeded.sort(Comparator.comparingInt(Resource::getId));
+            actuallyNeeded.sort(Comparator.comparingInt(Page::getPageNumber));
 
             System.out.println(currentThread.getName() + ": zone expansion, additional resources required " +
                     this.formatResourceIds(actuallyNeeded));
@@ -201,36 +211,44 @@ public class ResourceManager {
         }
 
         // Use the standard method to obtain additional resources
-        return this.acquireResources(actuallyNeeded, maxRetries, retryDelayMs);
+        if(this.acquireResourcePrivate(actuallyNeeded, maxRetries, retryDelayMs)) return actuallyNeeded;
+        return null;
     }
 
     /**
      * Simplified version of the resource zone extension method with infinite attempts
      */
-    public boolean expandResourceZone(List<Resource> additionalResources) throws InterruptedException {
-        return this.expandResourceZone(additionalResources, -1, 500);
+    public List<Page> expandResourceZone(List<Integer> additionalResourcesIndexes) throws InterruptedException {
+        return this.expandResourceZone(additionalResourcesIndexes, -1, 500);
     }
 
+
+
+    public void releasePages(List<Integer> resourcesToReleaseIndexes){
+        List<Page> resourcesToRelease = this.memoryManager.indexesToPages(resourcesToReleaseIndexes);
+        this.releasePagesInternal(resourcesToRelease);
+    }
     /**
      * Resource Release
-     * @param resourcesToRelease list of resources to release
+     * @param resourcesToRelease list of page indexes to release
      */
-    public void releaseResources(List<Resource> resourcesToRelease) {
+    private void releasePagesInternal(List<Page> resourcesToRelease) {
         Thread currentThread = Thread.currentThread();
 
         // Create a copy of the list to avoid problems during modification
-        List<Resource> resourceCopy = new ArrayList<>(resourcesToRelease);
+        List<Page> resourceCopy = new ArrayList<>(resourcesToRelease);
 
         // Sort resources by ID to maintain the same order of locks capture
-        resourceCopy.sort(Comparator.comparingInt(Resource::getId));
+        resourceCopy.sort(Comparator.comparingInt(Page::getPageNumber));
 
         // First release all resource locks
-        for (Resource resource : resourceCopy) {
+        for (Page page : resourceCopy) {
 //            resource.lock.lock();
             try {
-                if (resource.getOwner() == currentThread) {
-                    resource.setOwner(null);
+                if (page.getOwner() == currentThread) {
+                    page.setOwner(null);
                 }
+                if (page.isDirty()) this.memoryManager.markDirty(page.getPageNumber());
             } finally {
 //                resource.lock.unlock();
             }
@@ -239,7 +257,7 @@ public class ResourceManager {
         // Update the data structures under graphLock
         this.graphLock.lock();
         try {
-            Set<Resource> heldResources = this.threadToResourcesHeld.get(currentThread);
+            Set<Page> heldResources = this.threadToResourcesHeld.get(currentThread);
             if (heldResources != null) {
                 resourceCopy.forEach(heldResources::remove);
                 if (heldResources.isEmpty()) {
@@ -250,44 +268,56 @@ public class ResourceManager {
         } finally {
             this.graphLock.unlock();
         }
+        this.memoryManager.flushAll();
     }
 
     /**
      * Release of all resources held by the current flow
      */
-    public void releaseAllResources() {
+    public void releaseAllPages() {
         Thread currentThread = Thread.currentThread();
 
         this.graphLock.lock();
         try {
-            Set<Resource> heldResources = this.threadToResourcesHeld.getOrDefault(currentThread, new HashSet<>());
-            List<Resource> resourcesToRelease = new ArrayList<>(heldResources);
-
+            List<Page> resourcesToRelease = this.getHeldResources();
             if (!resourcesToRelease.isEmpty()) {
                 System.out.println(currentThread.getName() + ": frees up all resources " + this.formatResourceIds(resourcesToRelease));
-                this.releaseResources(resourcesToRelease);
+                this.releasePagesInternal(resourcesToRelease);
             }
         } finally {
             graphLock.unlock();
         }
     }
 
+    public void deletePages(List<Integer> pageToDeleteIndexes){
+        List<Page> pagesToDelete = this.memoryManager.indexesToPages(pageToDeleteIndexes);
+        Thread currentThread = Thread.currentThread();
+
+        for(Page page : pagesToDelete){
+            if(page.getOwner() != currentThread) throw new RuntimeException("Trying to delete page " + page.getPageNumber() + " that doesn't belong to this thread");
+        }
+        for(Page page : pagesToDelete){
+            this.memoryManager.deletePage(page);
+        }
+        this.releasePagesInternal(pagesToDelete);
+    }
+
     /**
      * Checks if a loop (deadlock) is formed when new waits are added
      * @param requestingThread thread requesting resources
-     * @param requestedResources requested resources
+     * @param requestedPages requested resources
      * @return true if a loop is formed
      */
-    private boolean wouldFormCycle(Thread requestingThread, List<Resource> requestedResources) {
+    private boolean wouldFormCycle(Thread requestingThread, List<Page> requestedPages) {
         // Create a temporary copy of the graph with new expectations
         Map<Thread, Set<Thread>> waitForGraph = this.buildWaitForGraph();
 
         // For each requested resource we check if it is not occupied by another thread
-        for (Resource resource : requestedResources) {
-            if (resource.getOwner() != null && resource.getOwner() != requestingThread) {
+        for (Page page : requestedPages) {
+            if (page.getOwner() != null && page.getOwner() != requestingThread) {
                 // Add an edge to the graph: the current thread is waiting for the owner of the resource
                 waitForGraph.putIfAbsent(requestingThread, new HashSet<>());
-                waitForGraph.get(requestingThread).add(resource.getOwner());
+                waitForGraph.get(requestingThread).add(page.getOwner());
             }
         }
 
@@ -303,30 +333,30 @@ public class ResourceManager {
         Map<Thread, Set<Thread>> waitForGraph = new HashMap<>();
 
         // For each thread, we check what resources it expects to receive
-        for (Map.Entry<Thread, Set<Resource>> entry : this.threadToResourcesWaiting.entrySet()) {
+        for (Map.Entry<Thread, Set<Page>> entry : this.threadToResourcesWaiting.entrySet()) {
             Thread waitingThread = entry.getKey();
-            Set<Resource> waitingResources = entry.getValue();
+            Set<Page> waitingPages = entry.getValue();
 
             waitForGraph.putIfAbsent(waitingThread, new HashSet<>());
 
             // For each pending resource, if it has an owner,
             // add an edge: waiting thread -> resource owner
-            for (Resource resource : waitingResources) {
-                if (resource.getOwner()!= null && resource.getOwner() != waitingThread) {
-                    waitForGraph.get(waitingThread).add(resource.getOwner());
+            for (Page page : waitingPages) {
+                if (page.getOwner()!= null && page.getOwner() != waitingThread) {
+                    waitForGraph.get(waitingThread).add(page.getOwner());
                 }
             }
         }
 
         // Add edges based on retained resources
-        for (Map.Entry<Thread, Set<Resource>> entry : this.threadToResourcesHeld.entrySet()) {
+        for (Map.Entry<Thread, Set<Page>> entry : this.threadToResourcesHeld.entrySet()) {
             Thread holdingThread = entry.getKey();
-            for (Map.Entry<Thread, Set<Resource>> waitEntry : threadToResourcesWaiting.entrySet()) {
+            for (Map.Entry<Thread, Set<Page>> waitEntry : threadToResourcesWaiting.entrySet()) {
                 Thread waitingThread = waitEntry.getKey();
-                Set<Resource> waitingResources = waitEntry.getValue();
+                Set<Page> waitingResources = waitEntry.getValue();
 
                 // Check if some thread is waiting for resources held by the current thread
-                for (Resource waitingResource : waitingResources) {
+                for (Page waitingResource : waitingResources) {
                     if (waitingResource.getOwner() == holdingThread) {
                         waitForGraph.putIfAbsent(waitingThread, new HashSet<>());
                         waitForGraph.get(waitingThread).add(holdingThread);
@@ -390,11 +420,11 @@ public class ResourceManager {
     /**
      * Get list of current resources held by current thread
      */
-    public List<Resource> getHeldResources() {
+    public List<Page> getHeldResources() {
         Thread currentThread = Thread.currentThread();
         graphLock.lock();
         try {
-            Set<Resource> heldResources = threadToResourcesHeld.getOrDefault(currentThread, new HashSet<>());
+            Set<Page> heldResources = this.threadToResourcesHeld.getOrDefault(currentThread, new HashSet<>());
             return new ArrayList<>(heldResources);
         } finally {
             graphLock.unlock();
@@ -404,10 +434,10 @@ public class ResourceManager {
     /**
      * Auxiliary method for formatting the list of resource IDs
      */
-    private String formatResourceIds(List<Resource> resources) {
+    private String formatResourceIds(List<Page> resources) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < resources.size(); i++) {
-            sb.append(resources.get(i).getId());
+            sb.append(resources.get(i).getPageNumber());
             if (i < resources.size() - 1) {
                 sb.append(", ");
             }
@@ -416,4 +446,3 @@ public class ResourceManager {
         return sb.toString();
     }
 }
-

@@ -7,14 +7,14 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
     private static final short linkSize = 6;
     private static final short type = 1;
 
-    public ObjectPage(short objectLength, int pageNumber) {
-        super(ObjectPage.type, (short)(objectLength*ObjectPage.linkSize), pageNumber);
-        this.objectLength = objectLength;
+    public ObjectPage(short objectNumber, int pageNumber) {
+        super(ObjectPage.type, (short)(objectNumber*ObjectPage.linkSize), pageNumber);
+        this.objectLength = objectNumber;
     }
 //  Object length is the number of attributes
-    public ObjectPage(ByteBuffer buffer, short objectLength, int  pageNumber) {
-        super(buffer, (short)(objectLength*ObjectPage.linkSize), pageNumber);
-        this.objectLength = objectLength;
+    public ObjectPage(ByteBuffer buffer, short objectNumber, int  pageNumber) {
+        super(buffer, (short)(objectNumber*ObjectPage.linkSize), pageNumber);
+        this.objectLength = objectNumber;
     }
 
     @Override

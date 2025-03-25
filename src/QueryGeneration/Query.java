@@ -1,4 +1,4 @@
-package Query;
+package QueryGeneration;
 
 import java.util.List;
 
