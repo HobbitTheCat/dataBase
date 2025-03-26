@@ -11,10 +11,12 @@ public class Test {
     static String dataPath = "example.ehh";
 
     public static void main(String[] args) {
-        FilePageLoader loader = new FilePageLoader(dataPath);
-        MetaPage metaPage = new MetaPage(loader.load(1), 1);
-        System.out.println(metaPage.getClassByName("City"));
-        System.out.println(metaPage);
+
+
+//        FilePageLoader loader = new FilePageLoader(dataPath);
+//        MetaPage metaPage = new MetaPage(loader.load(1), 1);
+//        System.out.println(metaPage.getClassByName("City"));
+//        System.out.println(metaPage);
 
 
 //        MemoryManager mm = new MemoryManager(10, dataPath);
@@ -28,4 +30,5 @@ public class Test {
 //
 //        System.out.println(tm.searchForTable("City"));
     }
+
 }

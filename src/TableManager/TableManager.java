@@ -75,6 +75,11 @@ public class TableManager {
         this.pageManager.releaseAllPages();
     }
 
+    public void addObject(TableDescription newTable) {
+
+        
+    }
+
     /**
      * Additional functions
      */

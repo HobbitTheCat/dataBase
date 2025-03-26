@@ -1,5 +1,7 @@
 package QueryGeneration;
 
+import NewQuery.Condition;
+
 import java.util.List;
 
 /**
