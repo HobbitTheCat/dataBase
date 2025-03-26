@@ -15,7 +15,7 @@ public abstract class Query implements Serializable {
 
     // define getters and setters in mode protected
 
-    public static <T> SelectQuery createSelectQuery(T entity) {
+    public static <T> SelectQuery select(Class<T> entityClass) {
         //save class name
         return new SelectQuery();
     }

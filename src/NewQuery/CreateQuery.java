@@ -3,16 +3,16 @@ package NewQuery;
 public class CreateQuery extends Query implements Update{
     @Override
     public Update column(String... columnNames) {
-        return null;
+        return this;
     }
 
     @Override
     public Update values(String... values) {
-        return null;
+        return this;
     }
 
     @Override
     public Update object(Object object) {
-        return null;
+        return this;
     }
 }

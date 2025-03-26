@@ -6,16 +6,16 @@ public class SelectQuery extends Query implements Serializable, Select {
 
     @Override
     public Select where(String attrName, String operator, String value) {
-        return null;
+        return this;
     }
 
     @Override
     public Select first() {
-        return null;
+        return this;
     }
 
     @Override
     public Select all() {
-        return null;
+        return this;
     }
 }
