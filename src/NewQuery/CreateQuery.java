@@ -7,7 +7,7 @@ public class CreateQuery extends Query implements Update{
     }
 
     @Override
-    public Update values(String... values) {
+    public Update values(Object... values) {
         return this;
     }
 

@@ -33,6 +33,13 @@ public class TableManager {
         return null;
     }
 
+    private TableDescription getTableByNameWithRelease(String tableName){
+        MetaPage metaPage = (MetaPage) this.acquirePage(1);
+        TableDescription result = this.searchTable(tableName, metaPage);
+        assert metaPage != null;
+        this.releasePage(metaPage);
+    }
+
     public void createTable(TableDescription newTable) {
         MetaPage metaPage = (MetaPage) this.acquirePage(1);
 
@@ -75,7 +82,7 @@ public class TableManager {
         this.pageManager.releaseAllPages();
     }
 
-    public void addObject(TableDescription newTable) {
+    public void addObject(TableDescription newTable, Object[] attributesValues) {
 
         
     }

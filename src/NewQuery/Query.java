@@ -2,19 +2,21 @@ package NewQuery;
 
 import java.io.Serializable;
 
-enum command{
-    CREATE, READ, UPDATE, DELETE
-}
-
 public abstract class Query implements Serializable {
     private command operationType; // type of operation that need's to be done with DB
     private String name; // class name
     private Condition[] conditions; // logical condition ([] if none)
     private String[] attributeNames; // names of attributes of class
-    private String[] attributeValues; // value of attributes ([] if none)
-    private String[] attributeTypes; // types of attributes  in most cases len(attributeNames) == len(attributeValues) == len(attributeTypes) apart for class creation
+    private Object[] attributeValues; // value of attributes ([] if none)
+    private String[] attributeTypes; // types of attributes  in most cases attributeNames.length == attributeValues.length == attributeTypes.length apart for class creation
+    //                  └> in case of class creation (attributeNames.length == 0) must be not empty
 
-    // define getters and setters in mode protected
+    // define getters and setters in mode public
+    public command getOperationType() {return this.operationType;}
+    public String getName() {return this.name;}
+    public String[] getAttributeNames() {return this.attributeNames;}
+    public Object[] getAttributeValues() {return this.attributeValues;}
+    public String[] getAttributeTypes() {return this.attributeTypes;}
 
     public static <T> SelectQuery select(Class<T> entityClass) {
         //save class name
