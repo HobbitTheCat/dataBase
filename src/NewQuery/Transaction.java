@@ -1,6 +1,8 @@
 package NewQuery;
 
-public class Transaction {
+import java.io.Serializable;
+
+public class Transaction implements Serializable {
     Query[] queries;
 
     Transaction() {

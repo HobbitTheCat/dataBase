@@ -11,7 +11,8 @@ public abstract class Query implements Serializable {
     private String name; // class name
     private Condition[] conditions; // logical condition ([] if none)
     private String[] attributeNames; // names of attributes of class
-    private String[] attributeValues; // value of attributes
+    private String[] attributeValues; // value of attributes ([] if none)
+    private String[] attributeTypes; // types of attributes  in most cases len(attributeNames) == len(attributeValues) == len(attributeTypes) apart for class creation
 
     // define getters and setters in mode protected
 

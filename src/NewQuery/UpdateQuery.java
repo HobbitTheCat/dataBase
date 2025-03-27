@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 public class UpdateQuery extends Query implements Select, Serializable, Update {
     @Override
-    public Select where(String attrName, String operator, String value) {
+    public Select where(String attrName, String operator, Object value) {
         return this;
     }
 
@@ -24,7 +24,7 @@ public class UpdateQuery extends Query implements Select, Serializable, Update {
     }
 
     @Override
-    public Update values(String... values) {
+    public Update values(Object... values) {
         return this;
     }
 
