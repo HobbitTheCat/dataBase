@@ -32,10 +32,17 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
     public Address[] get(short index) {
         if(index > this.getOnPageObjectNumber()) throw new IndexOutOfBoundsException("index out of bounds");
         Address[] result = new Address[this.objectLength];
-//        System.out.println("Cursor will be set on " + index*this.objectLength*ObjectPage.linkSize + " for index " + index);
         this.setCursor(index*this.objectLength*ObjectPage.linkSize);
         for(int i = 0; i < this.objectLength; i++)
             result[i] = this.readAddress();
+        return result;
+    }
+
+    public Address[] getAllObjectAddresses(){
+        short[] indexes = this.getAllNotFreeOffsets();
+        Address[] result = new Address[indexes.length];
+        for(int i = 0; i < indexes.length; i++)
+            result[i] = new Address(this.getPageNumber(), indexes[i]);
         return result;
     }
 
@@ -61,7 +68,6 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
         }
         this.setCursor(offset);
         for(Address objectLink : objectLinks) this.writeAddress(objectLink);
-//        return this.getIndexByOffset(offset);
     }
 
     @Override

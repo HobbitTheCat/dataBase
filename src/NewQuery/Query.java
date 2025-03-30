@@ -22,7 +22,9 @@ public abstract class Query implements Serializable {
     public String getName() {return this.name;}
     public ArrayList<String> getAttributeNames() {return this.attributeNames;}
     public Object getAttributeValueByName(String name) {return this.attributeValues.get(name);}
+    public Map<String, Object> getAttributeValues() {return this.attributeValues;}
     public String getAttributeTypeByName(String name) {return this.attributeTypes.get(name);}
+    public Map<String, String> getAttributeTypes(){return this.attributeTypes;}
     public ArrayList<Condition> getConditions() {return this.conditions;}
 
     protected void addCondition(Condition condition){

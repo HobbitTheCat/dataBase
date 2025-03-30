@@ -6,6 +6,9 @@ public class Address {
 
     public int getPageNumber() {return this.pageNumber;}
     public short getOffset() {return this.offset;}
+    public boolean isNull(){
+        return this.pageNumber == -1 && this.offset == -1;
+    }
 
     public Address(int pageNumber, short offset) {
         this.pageNumber = pageNumber;

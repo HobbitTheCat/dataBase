@@ -5,8 +5,6 @@ import TableManager.Exceptions.TableAlreadyExistException;
 import TableManager.Exceptions.TableManagementException;
 import PageManager.PageManager;
 import Pages.*;
-
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class TableManager {
@@ -17,6 +15,7 @@ public class TableManager {
     public TableManager(PageManager pageManager) {
         this.pageManager = pageManager;
     }
+    private final Map<Integer, Page> acquiredPages = new HashMap<>();
 
     /**
      * Table lookup functions
@@ -126,6 +125,43 @@ public class TableManager {
     }
 
     /**
+     * Function to restore object
+     */
+
+    private Map<String, Object> restoreObject(TableDescription classThatWeTryToRestore, Address objectPageAddress){
+        ObjectPage objectPage = (ObjectPage) this.acquirePage(objectPageAddress.getPageNumber());
+        Address[] addresses = objectPage.get(objectPageAddress.getOffset());
+
+        Map<String, Object> returnMap = new HashMap<>();
+        for(int i = 0; i < addresses.length; i++) {
+            if (!addresses[i].isNull()) {
+                Page oneOfNeededPage = this.acquirePage(addresses[i].getPageNumber());
+                switch (oneOfNeededPage.getType()) {
+                    case 2:
+                        StringPage page = (StringPage) oneOfNeededPage;
+                        returnMap.put(classThatWeTryToRestore.getAttributeName(i), page.get(addresses[i].getOffset()));
+                        break;
+                    default:
+                        throw new TableManagementException("I don't know how page of type " + oneOfNeededPage.getType() + " was found here");
+                }
+            } else returnMap.put(classThatWeTryToRestore.getAttributeName(i), null);
+        }
+        return returnMap;
+    }
+
+    private List<Map<String, Object>> restoreAllObjects(TableDescription classThatWeTryToRestore, ObjectPage objectPage) {
+        List<Map<String, Object>> returnList = new ArrayList<>();
+        while(objectPage != null){
+            Address[] addresses = objectPage.getAllObjectAddresses();
+            for(Address address : addresses)
+                returnList.add(this.restoreObject(classThatWeTryToRestore, address));
+            int nextPageIndex = objectPage.getNextPage();
+            objectPage = (nextPageIndex != -1) ?  (ObjectPage) this.acquirePage(nextPageIndex) : null;
+        }
+        return returnList;
+    }
+
+    /**
      * Function for creating a new table
      * for creation we need to get class name, all attributes names, attributes types for creating right pages
      * @param newTable object describing a new table
@@ -175,7 +211,7 @@ public class TableManager {
                 throw e;
             }
         } finally {
-            this.pageManager.releaseAllPages();
+            this.releaseAllPages();
         }
     }
 
@@ -194,11 +230,11 @@ public class TableManager {
      * @param attributesValues new object values
      */
 
-    public void addObject(TableDescription newTable, Object[] attributesValues) {
+    public void addObject(TableDescription newTable, Map<String, Object> attributesValues) {
         try {
             TableDescription tableOfObject = this.getTableByNameWithRelease(newTable.getName()); //get description of target table
 
-            int[] pageNeeded = new int[attributesValues.length];
+            int[] pageNeeded = new int[attributesValues.size()];
             for (int i = 0; i < newTable.getAttributeNumber(); i++) {
                 int internalIndex = tableOfObject.getAttributeInternalIndexByName(newTable.getAttributesNames()[i]);
                 if (internalIndex == -1)
@@ -225,13 +261,14 @@ public class TableManager {
             }
 
             try {
-                for (int i = 0; i < attributesValues.length; i++) {
+                for (int i = 0; i < attributesValues.size(); i++) {
                     Page page = acquiredPagesMap.get(tableOfObject.getAttributePageByName(newTable.getAttributeName(i)));
                     switch (newTable.getAttributeType(i)) {
                         case "string":
                         case "String":
                             StringPage stringPage = (StringPage) page;
-                            Address addressOfString = this.insertIntoStringPage(stringPage, (String) attributesValues[i], addressOfNewObject);
+                            Address addressOfString = this.insertIntoStringPage(stringPage,
+                                    (String) attributesValues.get(newTable.getAttributeName(i)), addressOfNewObject);
                             addresses[tableOfObject.getAttributeInternalIndexByName(newTable.getAttributeName(i))] = addressOfString;
                             break;
                         default:
@@ -250,7 +287,7 @@ public class TableManager {
             ObjectPage objectPage = (ObjectPage) this.acquirePage(addressOfNewObject.getPageNumber());
             objectPage.insertToIndex(addresses, addressOfNewObject.getOffset());
 
-        }finally {this.pageManager.releaseAllPages();}
+        }finally {this.releaseAllPages();}
     }
 
     /**
@@ -258,7 +295,7 @@ public class TableManager {
      *
      */
 
-    public void searchObject(TableDescription searchVictim, Condition[] conditions) {
+    public Map<String, Object>[] searchObject(TableDescription searchVictim, Condition[] conditions) {
         try{
             TableDescription tableOfObject = this.getTableByNameWithRelease(searchVictim.getName()); //get description of target table
             ArrayList<Condition> actualConditions = new ArrayList<>(); // list of condition that can be applied
@@ -267,12 +304,50 @@ public class TableManager {
                     actualConditions.add(condition);
             }
 
+            if(actualConditions.isEmpty()){
+                System.out.println("Зашел сюда");
+                List<Map<String, Object>> toReturn = this.restoreAllObjects(tableOfObject, (ObjectPage) this.acquirePage(tableOfObject.getObjectPage()));
+                Map<String, Object>[] toReturnArray = new HashMap[toReturn.size()];
+                for(int i = 0; i < toReturn.size(); i++)
+                    toReturnArray[i] = toReturn.get(i);
+                return toReturnArray;
+            }
+
             //applying firs condition
+            Condition fisrtCondition = actualConditions.get(0);
+            ArrayList<Address> addresses = new ArrayList<>();
+            switch(searchVictim.getAttributeType(searchVictim.getAttributeInternalIndexByName(fisrtCondition.attributeName()))){
+                case "string":
+                case "String":
+                    StringPage stringPage = (StringPage) this.acquirePage(tableOfObject.getAttributePageByName(fisrtCondition.attributeName()));
+                    Collections.addAll(addresses, this.searchForAddressesOnStringPage(stringPage, (String) fisrtCondition.value()));
+                    break;
+                default: throw new TableManagementException("Unknown attribute type: " + fisrtCondition.attributeName());
+            }
+            ArrayList<Map<String, Object>> objects = new ArrayList<>();
+            for(Address address : addresses){
+                objects.add(this.restoreObject(tableOfObject, address));
+            }
 
-
-
-
-        } finally {this.pageManager.releaseAllPages();}
+            //now applying all other conditions
+            for(int i = 1; i < actualConditions.size(); i++) {
+                Condition condition = actualConditions.get(i);
+                String attributeName = condition.attributeName();
+                // Подход 1: Использование итератора
+                Iterator<Map<String, Object>> iterator = objects.iterator();
+                while (iterator.hasNext()) {
+                    Map<String, Object> obj = iterator.next();
+                    switch (searchVictim.getAttributeType(searchVictim.getAttributeInternalIndexByName(attributeName))){
+                        case "string":
+                        case "String":
+                            if (!obj.get(attributeName).equals(condition.value()))
+                                iterator.remove();
+                            break;
+                    }
+                }
+            }
+            return objects.toArray(new Map[0]);
+        } finally {this.releaseAllPages();}
     }
 
     /**
@@ -280,21 +355,27 @@ public class TableManager {
      */
     private Page acquirePage(int pageNumber){
         List<Page> result = this.acquirePage(new int[]{pageNumber});
-        if(result == null) return null;
         return result.get(0);
     }
     private List<Page> acquirePage(int[] pageNumber){
         List<Integer> pageList = new ArrayList<>();
-        for(int number: pageNumber) pageList.add(number);
-        if(this.pageManager.getHeldResources().isEmpty()) {
+        List<Page> result = new ArrayList<>();
+        for(int number: pageNumber){
+            Page page = this.acquiredPages.get(number);
+            if(page != null) result.add(page);
+            else pageList.add(number);
+        }
+        if(this.acquiredPages.isEmpty()) { // this.pageManager.getHeldResources().isEmpty() take graph lock, suboptimal
             try {
-                return this.pageManager.acquireResources(pageList);
+                result.addAll(this.pageManager.acquireResources(pageList));
+                return result;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } else {
             try {
-                return this.pageManager.expandResourceZone(pageList);
+                result.addAll(this.pageManager.expandResourceZone(pageList));
+                return result;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -303,7 +384,13 @@ public class TableManager {
     }
 
     private void releasePage(Page page){
+        this.acquiredPages.remove(page.getPageNumber());
         this.pageManager.releasePages(List.of(page.getPageNumber()));
+    }
+
+    private void releaseAllPages(){
+        this.acquiredPages.clear();
+        this.pageManager.releaseAllPages();
     }
 
 

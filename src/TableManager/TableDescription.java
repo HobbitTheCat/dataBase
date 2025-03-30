@@ -43,11 +43,14 @@ public class TableDescription {
         this.attributeNumber = attributesNames.length;
         this.attributesTypes = new String[this.attributeNumber];
     }
-    public TableDescription(String tableName, String[] attributesNames, String[] attributesTypes) {
+    public TableDescription(String tableName, String[] attributesNames, Map<String, String> attributesTypes) {
         this.objectPage = -1;
         this.tableName = tableName;
-        this.attributesTypes = attributesTypes;
+
         this.attributesNames = attributesNames;
+        this.attributesTypes = new String[this.attributesNames.length];
+        for(int i = 0; i < this.attributesNames.length; i++)
+            this.attributesTypes[i] = attributesTypes.get(this.attributesNames[i]);
         this.attributeNumber = attributesNames.length;
         this.attributesPages = new int[this.attributeNumber];
     }

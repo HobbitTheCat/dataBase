@@ -18,14 +18,14 @@ public class QueryToAction {
     }
 
     private Result read(Query query){
-        TableDescription searchVictim = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes().toArray(new String[1]));
+        TableDescription searchVictim = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes());
 
         return null;
     }
 
     private Result insert(Query query){
         // function to insert object in existing table or create new table (is query.attributeValues.length == 0)
-        TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes().toArray(new String[1]));
+        TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes());
         if(query.getAttributeValues().isEmpty()){
             // case of class creation
             try {
@@ -37,7 +37,7 @@ public class QueryToAction {
         } else {
             // case of object insertion
             try{
-                this.tableManager.addObject(newTable,  query.getAttributeValues().toArray(new Object[1]));
+                this.tableManager.addObject(newTable,  query.getAttributeValues());
             } catch(Exception e){
                 return new Result("ERROR");
             }

@@ -209,6 +209,34 @@ public abstract class Page {
     }
 
     /**
+     * Function for finding all offsets that are in use
+     * @return
+     */
+    protected short[] getAllNotFreeOffsets(){
+        boolean[] freeOffsets = new boolean[this.getOnPageObjectNumber()];
+        for(int i = this.getFirstFree(); i > -1; this.setCursor(i), i = this.readShort()) {
+            this.setCursor(i + 2);
+            if (this.readShort() == this.dataSize) {
+                freeOffsets[i / this.dataSize] = true;
+            }
+        }
+        int notFreeCount = 0;
+        for (boolean freeOffset : freeOffsets) {
+            if (!freeOffset) {
+                notFreeCount++;
+            }
+        }
+        short[] result = new short[notFreeCount];
+        int count = 0;
+        for(short i = 0; i < freeOffsets.length; i++) {
+            if (!freeOffsets[i]) {
+                result[count++] = i;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Additional functions
      */
 
