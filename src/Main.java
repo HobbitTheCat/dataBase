@@ -1,11 +1,24 @@
 import Pages.*;
 import TableManager.TableDescription;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
 //        objectPageTest();
-        metaPageTest();
+//        metaPageTest();
+        Boat boat = new Boat("Bismark", 72);
+        System.out.println(getFieldTypesMap(Boat.class));
+
+    }
+
+    public static Map<String, String> getFieldTypesMap(Class<?> clazz) {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .collect(Collectors.toMap(Field::getName, field -> field.getType().getSimpleName()));
     }
 
     public static void metaPageTest(){
@@ -54,5 +67,14 @@ public class Main {
 
         sp.replace(index, "New String", new Address(1, 0));
         System.out.println(sp);
+    }
+}
+
+class Boat{
+    private String Name;
+    private int speed;
+    public Boat(String name, int speed) {
+        this.Name = name;
+        this.speed = speed;
     }
 }

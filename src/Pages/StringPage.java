@@ -2,6 +2,7 @@ package Pages;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import Exceptions.StorageOperationException;
@@ -44,7 +45,17 @@ public class StringPage extends Page implements BackLinkPage<String> {
         this.setCursor(index*(StringPage.totalSize));
         Address address = this.readAddress();
         byte[] bytes = this.readBytes(StringPage.stringSize);
-        return new Object[] {address, new String(bytes, StandardCharsets.UTF_8).trim()}; // 0 элемент - адрес, 1 элемент значение
+        return new Object[] {address, new String(bytes, StandardCharsets.UTF_8).trim()}; // 0 element - address, 1 element String value
+    }
+
+    public Address[] searchString(String value){
+        ArrayList<Address> returnAddressesList = new ArrayList<>();
+        for(int i = 0; i < this.getOnPageObjectNumber(); i++){
+            Object[] stringWithMetaInfo = this.getStringByIndexWithMeta(i);
+            if(((String) stringWithMetaInfo[1]).equals(value))
+                returnAddressesList.add((Address) stringWithMetaInfo[0]);
+        }
+        return returnAddressesList.toArray(new Address[0]);
     }
 
     @Override
@@ -52,7 +63,7 @@ public class StringPage extends Page implements BackLinkPage<String> {
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         this.validateSize(bytes);
         short freeAddress = this.getNextFreeOffset(StringPage.totalSize);
-        if (freeAddress < 0) throw new IndexOutOfBoundsException("Free address not found");
+        if (freeAddress < 0) return -1;
         this.writeAddress(objectAddress);
         this.writeBytes(bytes);
         return getIndexByOffset(freeAddress);

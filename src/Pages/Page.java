@@ -109,8 +109,28 @@ public abstract class Page {
      * @param dataSize if -1 -> dynamic data size
      */
     public Page(short type, short dataSize, int pageNumber){
-        this.data = ByteBuffer.allocate(Page.pageSize);
         this.pageNumber = pageNumber;
+        this.data = ByteBuffer.allocate(Page.pageSize);
+        this.reformatPage(type, dataSize);
+    }
+
+    /**
+     * Creating a page from ByteBuffer (as in case of reading from disk)
+     */
+    public Page (ByteBuffer data, short dataSize, int pageNumber){
+        this.pageNumber = pageNumber;
+        this.dataSize = dataSize;
+        this.data = data;
+    }
+
+    /**
+     * Same, but for page with dynamic size of elements.
+     */
+    public Page (ByteBuffer data, int pageNumber){
+        this(data, (short) (Page.freePageSize - 4), pageNumber);
+    }
+
+    protected void reformatPage(short type, short dataSize){
         this.setDataSize(dataSize);
         if(dataSize == -1) this.dataSize = (short) (Page.freePageSize - 4);
         else this.dataSize = dataSize;
@@ -138,28 +158,6 @@ public abstract class Page {
         }
     }
 
-    /**
-     *Constructor for creating a page with dynamic size of elements (MetaPage)
-     */
-//    public Page (short type, int pageNumber){
-//        this(type, (short) (Page.freePageSize - 4), pageNumber);
-//    }
-
-    /**
-     * Creating a page from ByteBuffer (as in case of reading from disk)
-     */
-    public Page (ByteBuffer data, short dataSize, int pageNumber){
-        this.pageNumber = pageNumber;
-        this.dataSize = dataSize;
-        this.data = data;
-    }
-
-    /**
-     * Same, but for page with dynamic size of elements.
-     */
-    public Page (ByteBuffer data, int pageNumber){
-        this(data, (short) (Page.freePageSize - 4), pageNumber);
-    }
 
     /**
      * Main functions
@@ -247,8 +245,10 @@ public abstract class Page {
         maxLength += 1;
         StringBuilder pageString = this.metaInfoString(maxLength);
         for(StringBuilder row : rows){
-            row.append(" ".repeat(maxLength - row.length())).append("│\n");
-            pageString.append(row);
+            if(row != null) {
+                row.append(" ".repeat(maxLength - row.length())).append("│\n");
+                pageString.append(row);
+            }
         }
         pageString.append("└").append("─".repeat(maxLength-1)).append("┘");
         return pageString.toString();

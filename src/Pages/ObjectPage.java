@@ -3,18 +3,24 @@ import Interface.*;
 import java.nio.ByteBuffer;
 
 public class ObjectPage extends Page implements DataPage<Address[]>{
+
+
     private final short objectLength; //number of attributes
     private static final short linkSize = 6;
     private static final short type = 1;
 
+    public short getObjectLength(){return this.objectLength;}
+
     public ObjectPage(short objectNumber, int pageNumber) {
         super(ObjectPage.type, (short)(objectNumber*ObjectPage.linkSize), pageNumber);
+        System.out.println("On creation new but here it's objectNumber: " + objectNumber);
         this.objectLength = objectNumber;
     }
 //  Object length is the number of attributes
-    public ObjectPage(ByteBuffer buffer, short objectNumber, int  pageNumber) {
-        super(buffer, (short)(objectNumber*ObjectPage.linkSize), pageNumber);
-        this.objectLength = objectNumber;
+    public ObjectPage(ByteBuffer buffer, short pageLength, int  pageNumber) {
+        super(buffer, (short)(pageLength), pageNumber);
+        System.out.println("On creation with ByteBuffer length: " + pageLength);
+        this.objectLength = (short) (pageLength/ObjectPage.linkSize);
     }
 
     @Override
@@ -26,6 +32,7 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
     public Address[] get(short index) {
         if(index > this.getOnPageObjectNumber()) throw new IndexOutOfBoundsException("index out of bounds");
         Address[] result = new Address[this.objectLength];
+//        System.out.println("Cursor will be set on " + index*this.objectLength*ObjectPage.linkSize + " for index " + index);
         this.setCursor(index*this.objectLength*ObjectPage.linkSize);
         for(int i = 0; i < this.objectLength; i++)
             result[i] = this.readAddress();
@@ -35,9 +42,26 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
     public int append(Address[] objectLinks) {
         if(objectLinks.length > this.objectLength) throw new IllegalArgumentException("Array is too long");
         short freeAddress = this.getNextFreeOffset(this.objectLength*ObjectPage.linkSize);
-        if (freeAddress == -1) throw new IndexOutOfBoundsException("Free address not found");
+        if (freeAddress == -1) return -1;
         for (Address objectLink : objectLinks) this.writeAddress(objectLink);
         return this.getIndexByOffset(freeAddress);
+    }
+
+    public int allocate(){
+        short freeAddress = this.getNextFreeOffset(this.objectLength*ObjectPage.linkSize); // очень внимательно проверить все что связано с this.objectLength() и super.size или как оно там
+        if (freeAddress == -1) return -1;
+        return this.getIndexByOffset(freeAddress);
+    }
+
+    public void insertToIndex(Address[] objectLinks, int index) {
+        short offset = (short) (this.objectLength*ObjectPage.linkSize*index);
+        if(objectLinks.length > this.objectLength){
+            this.releaseOffset(offset);
+            throw new IllegalArgumentException("Array is too long");
+        }
+        this.setCursor(offset);
+        for(Address objectLink : objectLinks) this.writeAddress(objectLink);
+//        return this.getIndexByOffset(offset);
     }
 
     @Override
@@ -56,13 +80,20 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
             builder.append("│ ");
             Address[] obj = this.get(i);
             for (int j = 0; j < obj.length; j++){
-                builder.append("(").append(obj[j].getPageNumber()).append(", ").append(obj[j].getOffset()).append(")");
+//                builder.append("(").append(obj[j].getPageNumber()).append(", ").append(obj[j].getOffset()).append(")");
+                builder.append(obj[j].toString());
                 if (j <  obj.length-1) builder.append(" ");
             }
             if (builder.length() > maxLength) maxLength = builder.length();
             rows[i] = builder;
         }
         rows = super.addingFreeSpace(maxLength, rows);
+
+
+        for(StringBuilder row : rows){
+            if(row != null)
+                if(row.length() > maxLength) maxLength = row.length();
+        }
         return(super.assemblyString(maxLength, rows));
     }
 }

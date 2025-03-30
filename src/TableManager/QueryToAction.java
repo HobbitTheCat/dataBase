@@ -18,15 +18,16 @@ public class QueryToAction {
     }
 
     private Result read(Query query){
-        //
+        TableDescription searchVictim = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes().toArray(new String[1]));
+
         return null;
     }
 
     private Result insert(Query query){
         // function to insert object in existing table or create new table (is query.attributeValues.length == 0)
-        if(query.getAttributeValues().length == 0){
+        TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes().toArray(new String[1]));
+        if(query.getAttributeValues().isEmpty()){
             // case of class creation
-            TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames(), query.getAttributeTypes());
             try {
                 this.tableManager.createTable(newTable);
                 return new Result("OK");
@@ -34,7 +35,12 @@ public class QueryToAction {
                 return new Result("ERROR"); //maybe we need to add error status code description
             }
         } else {
-
+            // case of object insertion
+            try{
+                this.tableManager.addObject(newTable,  query.getAttributeValues().toArray(new Object[1]));
+            } catch(Exception e){
+                return new Result("ERROR");
+            }
         }
         return null;
     }

@@ -18,6 +18,6 @@ public class Address {
 
     @Override
     public String toString() {
-        return ("PageNumber: " + this.pageNumber + ", Offset: " + this.offset);
+        return ("(PageNumber: " + this.pageNumber + ", Offset: " + this.offset + ")");
     }
 }

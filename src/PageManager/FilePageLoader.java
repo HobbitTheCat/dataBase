@@ -20,6 +20,6 @@ public class FilePageLoader implements MemoryManager.PageLoader{
             channel.position((long) pageIndex * pageSize);
             channel.read(buffer);
             return buffer;
-        }catch(Exception e){ throw new RuntimeException("Error saving file page: ",e); }
+        }catch(Exception e){ throw new RuntimeException("Error loading file page: ",e); }
     }
 }

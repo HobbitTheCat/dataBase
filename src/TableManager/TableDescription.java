@@ -1,29 +1,36 @@
 package TableManager;
 
+import java.util.Map;
+
 public class TableDescription {
     private final int attributeNumber;
     private int objectPage;
     private final String tableName;
-    private final String[] attributesNames;
+    private final String[] attributesNames; //maybe Map<String, Integer> for attributeNames <-> attributePages has sens
+//    private final Map<String, String> attributesTypes;
     private final String[] attributesTypes;
     private final int[] attributesPages;
 
     public String getName() {return this.tableName;}
     public int getAttributeNumber() {return this.attributeNumber;}
     public String[] getAttributesNames() {return this.attributesNames;}
+    public String getAttributeName(int index) {return this.attributesNames[index];}
     public int[] getAttributesPages() {return this.attributesPages;}
     public String[] getAttributesTypes() {return this.attributesTypes;}
+    public String getAttributeType(int index) {return this.attributesTypes[index];}
     public int getObjectPage() {return this.objectPage;}
 
     public void setObjectPage(int objectPage) {this.objectPage = objectPage;}
     public void setAttributesPage(int attributeNumber,  int attributePage) {this.attributesPages[attributeNumber] = attributePage;}
 
     public int getAttributePageByName(String attributeName) {
-        for(int i = 0; i < this.attributesNames.length; i++){
-            if(this.attributesNames[i].equals(attributeName)){
-                return this.attributesPages[i];
-            }
-        }
+        for(int i = 0; i < this.attributesNames.length; i++)
+            if(this.attributesNames[i].equals(attributeName)) return this.attributesPages[i];
+        return -1;
+    }
+    public int getAttributeInternalIndexByName(String attributeName) {
+        for(int i = 0; i < this.attributesNames.length; i++)
+            if(this.attributesNames[i].equals(attributeName)) return i;
         return -1;
     }
 

@@ -17,7 +17,7 @@ public class PageManager {
 
     // Condition for notification of waiting flows
     private final Condition resourceReleased = graphLock.newCondition();
-    private final MemoryManager memoryManager;
+    public final MemoryManager memoryManager;
 
     public PageManager(MemoryManager memoryManager) {
         this.threadToResourcesHeld = new HashMap<>();
@@ -187,7 +187,7 @@ public class PageManager {
                 System.out.println(currentThread.getName() + ": attempting to expand the zone without owning the resources");
                 return null; // exception may be needed
             }
-
+//            System.out.println("Currently held: " + currentlyHeld + "\n");
             // Remove from the list of requested resources those resources that the thread is already holding
 
             for (Page page : additionalPages) {
@@ -198,7 +198,7 @@ public class PageManager {
 
             if (actuallyNeeded.isEmpty()) {
                 // All requested resources already belong to the stream
-                return actuallyNeeded;
+                return additionalPages;
             }
 
             // Sort by ID to prevent deadlocks
@@ -211,7 +211,7 @@ public class PageManager {
         }
 
         // Use the standard method to obtain additional resources
-        if(this.acquireResourcePrivate(actuallyNeeded, maxRetries, retryDelayMs)) return actuallyNeeded;
+        if(this.acquireResourcePrivate(actuallyNeeded, maxRetries, retryDelayMs)) return additionalPages;
         return null;
     }
 
@@ -300,6 +300,27 @@ public class PageManager {
             this.memoryManager.deletePage(page);
         }
         this.releasePagesInternal(pagesToDelete);
+    }
+
+    public void exchangePage(Page oldPage, Page newPage) {
+        Thread currentThread = Thread.currentThread();
+        if (oldPage.getOwner() != currentThread) {
+            throw new RuntimeException("Trying to exchange page " + oldPage.getPageNumber() +
+                    " that doesn't belong to this thread");
+        }
+        this.graphLock.lock();
+        try {
+            Set<Page> heldResources = this.threadToResourcesHeld.get(currentThread);
+            if (heldResources != null) {
+                heldResources.remove(oldPage);
+                heldResources.add(newPage);
+            }
+            newPage.setOwner(currentThread);
+            oldPage.setOwner(null);
+            this.memoryManager.exchangePage(newPage);
+        } finally {
+            this.graphLock.unlock();
+        }
     }
 
     /**

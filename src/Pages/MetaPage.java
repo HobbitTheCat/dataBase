@@ -43,6 +43,10 @@ public class MetaPage extends Page implements MetaDataPage{
 
     public MetaPage(ByteBuffer buffer, int pageNumber) {super(buffer, pageNumber);}
     public MetaPage(int pageNumber){super(MetaPage.type, (short) -1, pageNumber);}
+    public void format(MetaPage previousPage){
+        super.reformatPage(MetaPage.type, (short) -1);
+        previousPage.setNextPage(this.getPageNumber());
+    }
 
 
     public short add(TableDescription dataClass){

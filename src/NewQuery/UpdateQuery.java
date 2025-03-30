@@ -1,10 +1,18 @@
 package NewQuery;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class UpdateQuery extends Query implements Select, Serializable, Update {
+
+    public UpdateQuery(String className, Map<String, String>  fieldTypes) {
+        super.setClassName(className);
+        super.setFieldTypes(fieldTypes);
+    }
+
     @Override
     public Select where(String attrName, String operator, Object value) {
+        super.addCondition(new Condition(attrName, operator, value));
         return this;
     }
 
@@ -20,6 +28,7 @@ public class UpdateQuery extends Query implements Select, Serializable, Update {
 
     @Override
     public Update column(String... columnNames) {
+
         return this;
     }
 

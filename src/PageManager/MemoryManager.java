@@ -66,6 +66,15 @@ public class MemoryManager {
         return pages;
     }
 
+    public void exchangePage(Page newPage) {
+        this.cacheLock.lock();
+        try{
+            this.pageCache.put(newPage.getPageNumber(),  newPage);
+        } finally {
+            this.cacheLock.unlock();
+        } this.markDirty(newPage.getPageNumber());
+    }
+
     private Page loadPage(int pageNumber){
         this.headerLock.readLock().lock();
         try {
@@ -139,9 +148,10 @@ public class MemoryManager {
             FreePage freePage = new FreePage(page.getPageNumber());
             freePage.setNextFreePage(freePageIndex);
 
-            page.setData(freePage.getData());
-            header.setFirstFree(page.getPageNumber());
-            this.markDirty(page.getPageNumber());
+//            page.setData(freePage.getData()); // не будет работать
+            this.exchangePage(freePage);
+            header.setFirstFree(freePage.getPageNumber());
+            this.markDirty(freePage.getPageNumber());
             this.markDirty(0);
         } finally {
             this.headerLock.writeLock().unlock();
