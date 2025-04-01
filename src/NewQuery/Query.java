@@ -58,5 +58,48 @@ public abstract class Query implements Serializable {
         return Arrays.stream(clazz.getDeclaredFields())
                 .collect(Collectors.toMap(Field::getName, field -> field.getType().getSimpleName()));
     }
+
+    protected boolean conditionIsApplicable(Condition condition) {
+        String attributeType = this.attributeTypes.get(condition.attributeName());
+        String operator = condition.operator();
+        Object value = condition.value();
+
+        if (attributeType == null) {
+            throw new IllegalArgumentException("Attribute type not found for: " + condition.attributeName());
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("Value cannot be null for condition: " + condition);
+        }
+
+        switch (attributeType) {
+            case "String":
+                if (!(value instanceof String)) {
+                    throw new IllegalArgumentException("Invalid value type. Expected String but got: " + value.getClass().getSimpleName());
+                }
+                if (!(operator.equals("==") || operator.equals("=") || operator.equals("!=") || operator.equals("contains"))) {
+                    throw new IllegalArgumentException("Invalid operator for String: " + operator);
+                }
+                return true;
+            case "Integer":
+                if (!(value instanceof Integer)) throw new IllegalArgumentException("Invalid value type for Integer.");
+            case "Long":
+                if (!(value instanceof Long)) throw new IllegalArgumentException("Invalid value type for Long.");
+            case "Short":
+                if (!(value instanceof Short)) throw new IllegalArgumentException("Invalid value type for Short.");
+            case "Byte":
+                if (!(value instanceof Byte)) throw new IllegalArgumentException("Invalid value type for Byte.");
+            case "Double":
+                if (!(value instanceof Double)) throw new IllegalArgumentException("Invalid value type for Double.");
+            case "Float":
+                if (!(value instanceof Float)) throw new IllegalArgumentException("Invalid value type for Float.");
+                if (!(operator.equals("==") || operator.equals(">") || operator.equals("<") || operator.equals(">=") || operator.equals("<=") || operator.equals("!="))) {
+                    throw new IllegalArgumentException("Invalid operator for numeric type: " + operator);
+                }
+                return true;
+            default:
+                throw new IllegalArgumentException("Unsupported attribute type: " + attributeType);
+        }
+    }
+
 }
 

@@ -3,8 +3,11 @@ package TableManager;
 import NewQuery.Query;
 import NewQuery.Result;
 
+import java.util.ArrayList;
+import java.util.Map;
+
 public class QueryToAction {
-    private TableManager tableManager;
+    private final TableManager tableManager;
 
     public QueryToAction(TableManager tableManager) {this.tableManager = tableManager;}
 
@@ -19,8 +22,12 @@ public class QueryToAction {
 
     private Result read(Query query){
         TableDescription searchVictim = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes());
-
-        return null;
+        try {
+            ArrayList<Map<String, Object>> result = this.tableManager.searchObject(searchVictim, query.getConditions());
+            return new Result("OK", result);
+        } catch (Exception e) {
+            return new Result("ERROR", e.getMessage());
+        }
     }
 
     private Result insert(Query query){
@@ -32,17 +39,17 @@ public class QueryToAction {
                 this.tableManager.createTable(newTable);
                 return new Result("OK");
             } catch (Exception e) {
-                return new Result("ERROR"); //maybe we need to add error status code description
+                return new Result("ERROR", e.getMessage()); //maybe we need to add error status code description
             }
         } else {
             // case of object insertion
             try{
                 this.tableManager.addObject(newTable,  query.getAttributeValues());
+                return new Result("OK");
             } catch(Exception e){
-                return new Result("ERROR");
+                return new Result("ERROR", e.getMessage());
             }
         }
-        return null;
     }
 
     private Result update(Query query){

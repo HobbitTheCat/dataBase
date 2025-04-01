@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import Exceptions.StorageOperationException;
 import Interface.*;
+import NewQuery.Condition;
 
 public class StringPage extends Page implements BackLinkPage<String> {
     private static final short stringSize = 64;
@@ -57,6 +58,33 @@ public class StringPage extends Page implements BackLinkPage<String> {
         }
         return returnAddressesList.toArray(new Address[0]);
     }
+
+    @Override
+    public ArrayList<Address> search(Condition condition) {
+        ArrayList<Address> returnAddressesList = new ArrayList<>();
+        String operator = condition.operator();
+        String value = (String) condition.value();
+
+        for (int i = 0; i < this.getOnPageObjectNumber(); i++) {
+            Object[] stringWithMetaInfo = this.getStringByIndexWithMeta(i);
+            String data = (String) stringWithMetaInfo[1];
+            Address address = (Address) stringWithMetaInfo[0];
+            if(StringPage.applyCondition(data, operator, value))
+                returnAddressesList.add(address);
+
+        }return returnAddressesList;
+    }
+
+    public static boolean applyCondition(String data, String operator, String value){
+        return switch (operator) {
+            case "==" -> data.equals(value);
+            case "=" -> data.equalsIgnoreCase(value);
+            case "!=" -> !data.equals(value);
+            case "contains" -> data.contains(value);
+            default -> throw new StorageOperationException("Unknown operator for StringPage: " + operator);
+        };
+    }
+
 
     @Override
     public short add(String string, Address objectAddress) {

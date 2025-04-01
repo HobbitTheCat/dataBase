@@ -1,11 +1,13 @@
 package TableManager;
 
+import Interface.BackLinkPage;
 import NewQuery.Condition;
 import TableManager.Exceptions.TableAlreadyExistException;
 import TableManager.Exceptions.TableManagementException;
 import PageManager.PageManager;
 import Pages.*;
 import java.util.*;
+import java.util.function.Function;
 
 public class TableManager {
     /**
@@ -90,38 +92,74 @@ public class TableManager {
         if(offset == -1) throw new TableManagementException("Object description is to long to be  inserted");
     }
 
-    private Address insertIntoStringPage(StringPage page, String stringToInsert, Address backAddress){
-        short index = page.add(stringToInsert, backAddress);
+//    private Address insertIntoStringPage(StringPage page, String stringToInsert, Address backAddress){
+//        short index = page.add(stringToInsert, backAddress);
+//        if(index > -1) return new Address(page.getPageNumber(), index);
+//        while (page.getNextPage() != -1) {
+//            StringPage tempPage = (StringPage) this.acquirePage(page.getNextPage());
+//            this.releasePage(page);
+//            page = tempPage;
+//            if((index = page.add(stringToInsert, backAddress))> -1) return new  Address(page.getPageNumber(), index);
+//        }
+//
+//        FreePage newPage = (FreePage) this.acquirePage(-1);
+//        if(newPage == null) throw new TableManagementException("Page can't be allocated");
+//        StringPage newStringPage = new StringPage(newPage.getPageNumber());
+//        page.setNextPage(newStringPage.getPageNumber());
+//        this.pageManager.exchangePage(newPage, newStringPage);
+//        return new Address(newStringPage.getPageNumber(), newStringPage.add(stringToInsert, backAddress));
+//    }
+
+    private <T> Address insertIntoBackLinkPage(BackLinkPage<T> page, T value, Address backAddress, Function<Integer, BackLinkPage<T>> pageCreator){
+        short index = page.add(value, backAddress);
         if(index > -1) return new Address(page.getPageNumber(), index);
-        while (page.getNextPage() != -1) {
-            StringPage tempPage = (StringPage) this.acquirePage(page.getNextPage());
-            this.releasePage(page);
+        while (page.getNextPage() != -1){
+            BackLinkPage<T> tempPage = (BackLinkPage<T>) this.acquirePage(page.getNextPage());
+            this.releasePage((Page) page);
             page = tempPage;
-            if((index = page.add(stringToInsert, backAddress) )> -1) return new  Address(page.getPageNumber(), index);
+            index = page.add(value, backAddress);
+            if(index > -1) return new Address(page.getPageNumber(), index);
         }
 
-        FreePage newPage = (FreePage) this.acquirePage(-1);
-        if(newPage == null) throw new TableManagementException("Page can't be allocated");
-        StringPage newStringPage = new StringPage(newPage.getPageNumber());
-        page.setNextPage(newStringPage.getPageNumber());
-        this.pageManager.exchangePage(newPage, newStringPage);
-        return new Address(newStringPage.getPageNumber(), newStringPage.add(stringToInsert, backAddress));
+        FreePage newFreePage = (FreePage) this.acquirePage(-1);
+        if(newFreePage == null) throw new TableManagementException("Page can't be allocated");
+
+        int newPageNumber = newFreePage.getPageNumber();
+        BackLinkPage<T> newPage = pageCreator.apply(newPageNumber);
+        page.setNextPage(newPageNumber);
+        this.pageManager.exchangePage(newFreePage, (Page) newPage);
+        index = newPage.add(value, backAddress);
+        return  new Address(newPageNumber, index);
     }
+    private Address insertIntoStringPage(StringPage page, String stringToInsert, Address backAddress) {
+        return insertIntoBackLinkPage(page, stringToInsert, backAddress,
+                pageNumber -> new StringPage(pageNumber));
+    }
+
+    private Address insertIntoLongPage(LongPage page, Long longValue, Address backAddress) {
+        return insertIntoBackLinkPage(page, longValue, backAddress,
+                pageNumber -> new LongPage(pageNumber));
+    }
+
 
     /**
      * Value search functions on pages
      */
-    private Address[] searchForAddressesOnStringPage(StringPage firstPage, String stringToSearch) {
+    private ArrayList<Address> searchForAddresses(Page firstPage, Condition condition){
         ArrayList<Address> returnAddresses = new ArrayList<>();
-        StringPage page = firstPage;
-
+        Page page = firstPage;
         while (page != null) {
-            Collections.addAll(returnAddresses, page.searchString(stringToSearch));
+            switch (page.getType()) {
+                case 2:
+                    returnAddresses.addAll(((StringPage) page).search(condition)); break;
+                case 3:
+                    returnAddresses.addAll(((LongPage) page).search(condition)); break;
+                default: throw new TableManagementException("Unknown attribute type: " + page.getType());
+            }
             int nextPageIndex = page.getNextPage();
-            page = (nextPageIndex != -1) ? (StringPage) this.acquirePage(nextPageIndex) : null;
+            page = (nextPageIndex != -1) ? (Page) this.acquirePage(nextPageIndex) : null;
         }
-
-        return returnAddresses.toArray(new Address[0]);
+        return returnAddresses;
     }
 
     /**
@@ -138,8 +176,12 @@ public class TableManager {
                 Page oneOfNeededPage = this.acquirePage(addresses[i].getPageNumber());
                 switch (oneOfNeededPage.getType()) {
                     case 2:
-                        StringPage page = (StringPage) oneOfNeededPage;
-                        returnMap.put(classThatWeTryToRestore.getAttributeName(i), page.get(addresses[i].getOffset()));
+                        StringPage stringPage = (StringPage) oneOfNeededPage;
+                        returnMap.put(classThatWeTryToRestore.getAttributeName(i), stringPage.get(addresses[i].getOffset()));
+                        break;
+                    case 3:
+                        LongPage longPage = (LongPage) oneOfNeededPage;
+                        returnMap.put(classThatWeTryToRestore.getAttributeName(i), longPage.get(addresses[i].getOffset()));
                         break;
                     default:
                         throw new TableManagementException("I don't know how page of type " + oneOfNeededPage.getType() + " was found here");
@@ -149,8 +191,8 @@ public class TableManager {
         return returnMap;
     }
 
-    private List<Map<String, Object>> restoreAllObjects(TableDescription classThatWeTryToRestore, ObjectPage objectPage) {
-        List<Map<String, Object>> returnList = new ArrayList<>();
+    private ArrayList<Map<String, Object>> restoreAllObjects(TableDescription classThatWeTryToRestore, ObjectPage objectPage) {
+        ArrayList<Map<String, Object>> returnList = new ArrayList<>();
         while(objectPage != null){
             Address[] addresses = objectPage.getAllObjectAddresses();
             for(Address address : addresses)
@@ -187,14 +229,24 @@ public class TableManager {
                 this.pageManager.deletePages(pageList);
                 throw new TableManagementException("Attribute page can't be allocated");
             }
+            Page oldPage;
             for (int i = 0; i < newTable.getAttributeNumber(); i++) {
                 int pageNumber = pages.get(i).getPageNumber();
                 switch (newTable.getAttributesTypes()[i]) {
                     case "string":
                     case "String":
-                        Page oldPage = pages.get(i);
+                        oldPage = pages.get(i);
                         StringPage stringPage = new StringPage(pageNumber);
                         this.pageManager.exchangePage(oldPage, stringPage);
+                        break;
+                    case "integer":
+                    case "Integer":
+                    case "int":
+                    case "long":
+                    case "Long":
+                        oldPage = pages.get(i);
+                        LongPage longPage = new LongPage(pageNumber);
+                        this.pageManager.exchangePage(oldPage, longPage);
                         break;
                     default:
                         throw new TableManagementException("Unknown attribute type: " + newTable.getAttributesTypes()[i]);
@@ -263,19 +315,28 @@ public class TableManager {
             try {
                 for (int i = 0; i < attributesValues.size(); i++) {
                     Page page = acquiredPagesMap.get(tableOfObject.getAttributePageByName(newTable.getAttributeName(i)));
-                    switch (newTable.getAttributeType(i)) {
-                        case "string":
-                        case "String":
-                            StringPage stringPage = (StringPage) page;
-                            Address addressOfString = this.insertIntoStringPage(stringPage,
-                                    (String) attributesValues.get(newTable.getAttributeName(i)), addressOfNewObject);
-                            addresses[tableOfObject.getAttributeInternalIndexByName(newTable.getAttributeName(i))] = addressOfString;
-                            break;
-                        default:
-                            throw new TableManagementException("Unknown attribute type: " + newTable.getAttributeType(i));
+                    String attributeType = newTable.getAttributeType(i).toLowerCase();
+                    Object value = attributesValues.get(newTable.getAttributeName(i));
+                    Address address;
+                    if (value == null){ // don't know if it needs to be here
+                        address = new Address(-1, -1);
+                    } else {
+                        switch (attributeType) {
+                            case "string" -> {
+                                address = this.insertIntoStringPage((StringPage) page, (String) value, addressOfNewObject);
+                            }
+                            case "integer", "int", "long", "short", "byte", "double" -> { //not schure about double
+                                address = this.insertIntoLongPage((LongPage) page, ((Number) value).longValue(), addressOfNewObject);
+                            }
+                            default -> {
+                                throw new TableManagementException("Unknown attribute type: " + attributeType);
+                            }
+                        }
                     }
+                    addresses[tableOfObject.getAttributeInternalIndexByName(newTable.getAttributeName(i))] = address;
                 }
             }  catch (Exception e) {
+                // here we need to add rollback code for all changed pages
                 throw e;
             }
 
@@ -295,7 +356,7 @@ public class TableManager {
      *
      */
 
-    public Map<String, Object>[] searchObject(TableDescription searchVictim, Condition[] conditions) {
+    public ArrayList<Map<String, Object>> searchObject(TableDescription searchVictim, ArrayList<Condition> conditions) {
         try{
             TableDescription tableOfObject = this.getTableByNameWithRelease(searchVictim.getName()); //get description of target table
             ArrayList<Condition> actualConditions = new ArrayList<>(); // list of condition that can be applied
@@ -305,25 +366,14 @@ public class TableManager {
             }
 
             if(actualConditions.isEmpty()){
-                System.out.println("Зашел сюда");
-                List<Map<String, Object>> toReturn = this.restoreAllObjects(tableOfObject, (ObjectPage) this.acquirePage(tableOfObject.getObjectPage()));
-                Map<String, Object>[] toReturnArray = new HashMap[toReturn.size()];
-                for(int i = 0; i < toReturn.size(); i++)
-                    toReturnArray[i] = toReturn.get(i);
-                return toReturnArray;
+                return this.restoreAllObjects(tableOfObject, (ObjectPage) this.acquirePage(tableOfObject.getObjectPage()));
             }
 
             //applying firs condition
             Condition fisrtCondition = actualConditions.get(0);
-            ArrayList<Address> addresses = new ArrayList<>();
-            switch(searchVictim.getAttributeType(searchVictim.getAttributeInternalIndexByName(fisrtCondition.attributeName()))){
-                case "string":
-                case "String":
-                    StringPage stringPage = (StringPage) this.acquirePage(tableOfObject.getAttributePageByName(fisrtCondition.attributeName()));
-                    Collections.addAll(addresses, this.searchForAddressesOnStringPage(stringPage, (String) fisrtCondition.value()));
-                    break;
-                default: throw new TableManagementException("Unknown attribute type: " + fisrtCondition.attributeName());
-            }
+            Page page = this.acquirePage(tableOfObject.getAttributePageByName(fisrtCondition.attributeName()));
+            ArrayList<Address> addresses = this.searchForAddresses(page, fisrtCondition);
+
             ArrayList<Map<String, Object>> objects = new ArrayList<>();
             for(Address address : addresses){
                 objects.add(this.restoreObject(tableOfObject, address));
@@ -333,20 +383,24 @@ public class TableManager {
             for(int i = 1; i < actualConditions.size(); i++) {
                 Condition condition = actualConditions.get(i);
                 String attributeName = condition.attributeName();
-                // Подход 1: Использование итератора
                 Iterator<Map<String, Object>> iterator = objects.iterator();
                 while (iterator.hasNext()) {
                     Map<String, Object> obj = iterator.next();
-                    switch (searchVictim.getAttributeType(searchVictim.getAttributeInternalIndexByName(attributeName))){
-                        case "string":
-                        case "String":
-                            if (!obj.get(attributeName).equals(condition.value()))
-                                iterator.remove();
-                            break;
+                    String attributeType = searchVictim.getAttributeType(searchVictim.getAttributeInternalIndexByName(attributeName)).toLowerCase();
+                    switch (attributeType){
+                        case "string" -> {
+                            if (!StringPage.applyCondition((String) obj.get(attributeName), condition.operator(), (String) condition.value())) iterator.remove();
+                        }
+                        case "integer", "int", "long", "short", "byte", "double" -> {
+                            if (!LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue())) iterator.remove();
+                        }
+                        default -> {
+                            throw new TableManagementException("Unknown attribute type: " + attributeType);
+                        }
                     }
                 }
             }
-            return objects.toArray(new Map[0]);
+            return objects;
         } finally {this.releaseAllPages();}
     }
 
