@@ -58,20 +58,23 @@ public class TableManager {
     private Address insertToFreeObjectPlace(ObjectPage objectPage){
         int index = objectPage.allocate();
         if (index > -1) return new Address(objectPage.getPageNumber(), index);
-
         while (objectPage.getNextPage() != -1) {
             ObjectPage tempObjectPage = (ObjectPage) this.acquirePage(objectPage.getNextPage());
             this.releasePage(objectPage);
             objectPage = tempObjectPage;
-            if ((index = objectPage.allocate()) > -1) return new Address(objectPage.getPageNumber(), index);
+            index = objectPage.allocate();
+            if (index > -1) return new Address(objectPage.getPageNumber(), index);
         }
 
-        FreePage newPage = (FreePage) this.acquirePage(-1);
-        if(newPage == null) throw new TableManagementException("Page can't be allocated");
-        ObjectPage newObjectPage = new ObjectPage(objectPage.getObjectLength(), newPage.getPageNumber());
-        objectPage.setNextPage(newObjectPage.getPageNumber());
-        this.pageManager.exchangePage(newPage, newObjectPage);
-        return  new Address(newPage.getPageNumber(), newObjectPage.allocate());
+        FreePage newFreePage = (FreePage) this.acquirePage(-1);
+        if(newFreePage == null) throw new TableManagementException("Page can't be allocated");
+
+        int newPageNumber = newFreePage.getPageNumber();
+        ObjectPage newObjectPage = new ObjectPage(objectPage.getObjectLength(), newPageNumber);
+        objectPage.setNextPage(newPageNumber);
+        this.pageManager.exchangePage(newFreePage, newObjectPage);
+        index = newObjectPage.allocate();
+        return  new Address(newPageNumber, index);
     }
 
     private void insertToFreeMetaPlace(MetaPage metaPage, TableDescription newTable){
@@ -91,24 +94,6 @@ public class TableManager {
         offset = newMetaPage.add(newTable);
         if(offset == -1) throw new TableManagementException("Object description is to long to be  inserted");
     }
-
-//    private Address insertIntoStringPage(StringPage page, String stringToInsert, Address backAddress){
-//        short index = page.add(stringToInsert, backAddress);
-//        if(index > -1) return new Address(page.getPageNumber(), index);
-//        while (page.getNextPage() != -1) {
-//            StringPage tempPage = (StringPage) this.acquirePage(page.getNextPage());
-//            this.releasePage(page);
-//            page = tempPage;
-//            if((index = page.add(stringToInsert, backAddress))> -1) return new  Address(page.getPageNumber(), index);
-//        }
-//
-//        FreePage newPage = (FreePage) this.acquirePage(-1);
-//        if(newPage == null) throw new TableManagementException("Page can't be allocated");
-//        StringPage newStringPage = new StringPage(newPage.getPageNumber());
-//        page.setNextPage(newStringPage.getPageNumber());
-//        this.pageManager.exchangePage(newPage, newStringPage);
-//        return new Address(newStringPage.getPageNumber(), newStringPage.add(stringToInsert, backAddress));
-//    }
 
     private <T> Address insertIntoBackLinkPage(BackLinkPage<T> page, T value, Address backAddress, Function<Integer, BackLinkPage<T>> pageCreator){
         short index = page.add(value, backAddress);

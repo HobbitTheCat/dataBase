@@ -138,7 +138,7 @@ public abstract class Page {
         this.setNextPage(-1);
         this.setFirstFree((short) 0);
         for(int i = 0; i < Page.freePageSize; i+=this.dataSize){
-            if(i + this.dataSize <= Page.freePageSize){
+            if(i + this.dataSize < Page.freePageSize){
                 short nextFree = (short)  (i + this.dataSize);
                 this.setCursor(i);
                 this.writeShort(nextFree);

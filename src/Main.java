@@ -9,10 +9,11 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
-//        objectPageTest();
+        objectPageTest();
 //        metaPageTest();
-        Boat boat = new Boat("Bismark", 72);
-        System.out.println(getFieldTypesMap(Boat.class));
+
+//        Boat boat = new Boat("Bismark", 72);
+//        System.out.println(getFieldTypesMap(Boat.class));
 
     }
 
@@ -38,10 +39,10 @@ public class Main {
     }
 
     public static void objectPageTest(){
-        ObjectPage op = new ObjectPage((short) 5, 11);
+        ObjectPage op = new ObjectPage((short) 1, 11);
 //        System.out.println(op);
-        int index = op.append(new Address[] {new Address(2,0), new Address(3, 10),
-                new Address(4, 20), new Address(5, 3), new Address(6, 15),});
+        int index = op.append(new Address[] {new Address(2,0)}); //, new Address(3, 10),
+//                new Address(4, 20), new Address(5, 3), new Address(6, 15),});
         System.out.println(index);
         System.out.println(op);
     }
