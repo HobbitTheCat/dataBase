@@ -9,8 +9,12 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
-        objectPageTest();
+//        objectPageTest();
 //        metaPageTest();
+
+//        int[] test = new int[4];
+//        int test;
+//        System.out.println(test);
 
 //        Boat boat = new Boat("Bismark", 72);
 //        System.out.println(getFieldTypesMap(Boat.class));

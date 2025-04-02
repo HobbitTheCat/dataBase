@@ -24,12 +24,12 @@ public class Test {
         System.out.println(metaPage);
 
 
-//        ByteBuffer buffer = loader.load(2);
-//        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
-//        System.out.println(objectPage);
-//        buffer = loader.load(11);
-//        objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
-//        System.out.println(objectPage);
+        ByteBuffer buffer = loader.load(2);
+        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
+        System.out.println(objectPage);
+        buffer = loader.load(11);
+        objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
+        System.out.println(objectPage);
 
 
 //        LongPage page = new LongPage(loader.load(3), 3);

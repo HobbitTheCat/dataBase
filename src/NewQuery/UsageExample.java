@@ -7,7 +7,8 @@ public class UsageExample {
         Session session = new Session();
         Transaction transaction = session.createNewTransaction();
         transaction.add(Query.select(Hero.class).where("name", "==", "Tommy Sharp").where("age", ">", 35));
-        transaction.add(Query.create(Hero.class).column("name", "secretName", "age").values(hero.name, hero.secretName,  hero.age));
+        transaction.add(Query.create(Hero.class).attribute("name", hero.name).attribute("age", hero.age).attribute("secretName", hero.secretName));
+        System.out.println(transaction);
         Result[] results = session.execute(transaction);
     }
 }

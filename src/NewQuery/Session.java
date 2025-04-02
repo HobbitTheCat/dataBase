@@ -7,8 +7,8 @@ public class Session {
     }
 
     public Transaction createNewTransaction(){
-        // creation of transaction
-        return null;
+        int transactionNumber = 0; // here I need to send request to obtain unique transaction number
+        return new Transaction(transactionNumber);
     }
 
     public Result[] execute(Transaction transaction){

@@ -1,29 +1,22 @@
 package NewQuery;
 
 import Exceptions.ORMUsageException;
+import NewQuery.Interfaces.Update;
 
 import java.util.Map;
 
-public class CreateQuery extends Query implements Update{
+public class CreateQuery extends Query implements Update {
     public CreateQuery(String className, Map<String, String>  fieldTypes) {
-        super.setClassName(className);
-        super.setFieldTypes(fieldTypes);
+        super(className, command.CREATE, fieldTypes);
     }
 
     @Override
-    public Update column(String... columnNames) {
-        super.addAttributeNames(columnNames);
-        return this;
-    }
-
-    @Override
-    public Update values(Object... values) {
-        if(super.getAttributeNames().isEmpty()){
-            throw new ORMUsageException("You must specify at least one column name");
-        }
-//        if(super.getAttributeNames().size() != values.length  + super.getAttributeValues().size()){
-//            throw new ORMUsageException("The number of columns must be equal to number of values");
-//        }
+    public Update attribute(String attrName, Object value) {
+        if (super.hasAttribute(attrName))
+            super.addAttributeNames(attrName);
+        else throw new ORMUsageException("Attribute " + attrName + " is not present in " + this.getName());
+        if(super.providedTypeConsistentWithClassType(attrName,  value))
+            super.addAttributeValue(attrName, value);
         return this;
     }
 

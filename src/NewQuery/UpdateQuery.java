@@ -1,17 +1,19 @@
 package NewQuery;
 
+import NewQuery.Interfaces.Select;
+import NewQuery.Interfaces.Update;
+
 import java.io.Serializable;
 import java.util.Map;
 
 public class UpdateQuery extends Query implements Select, Serializable, Update {
 
     public UpdateQuery(String className, Map<String, String>  fieldTypes) {
-        super.setClassName(className);
-        super.setFieldTypes(fieldTypes);
+        super(className, command.UPDATE, fieldTypes);
     }
 
     @Override
-    public Select where(String attrName, String operator, Object value) {
+    public UpdateQuery where(String attrName, String operator, Object value) {
         Condition condition = new Condition(attrName, operator, value);
         if(super.conditionIsApplicable(condition))
             super.addCondition(condition);
@@ -19,28 +21,18 @@ public class UpdateQuery extends Query implements Select, Serializable, Update {
     }
 
     @Override
-    public Select first() {
+    public UpdateQuery all() {
+        super.setModifier();
         return this;
     }
 
     @Override
-    public Select all() {
+    public UpdateQuery attribute(String attrName, Object value) {
         return this;
     }
 
     @Override
-    public Update column(String... columnNames) {
-
-        return this;
-    }
-
-    @Override
-    public Update values(Object... values) {
-        return this;
-    }
-
-    @Override
-    public Update object(Object object) {
+    public UpdateQuery object(Object object) {
         return this;
     }
 }

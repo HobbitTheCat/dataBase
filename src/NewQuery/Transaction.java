@@ -1,10 +1,14 @@
 package NewQuery;
 
+import NewQuery.Interfaces.Select;
+import NewQuery.Interfaces.Update;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Transaction implements Serializable {
-    private ArrayList<Query> queries;
+    private final ArrayList<Query> queries;
     private final int transactionId;
 
     public int getTransactionId() {return transactionId;}
@@ -12,6 +16,7 @@ public class Transaction implements Serializable {
 
     Transaction(int transactionId) {
         this.transactionId = transactionId;
+        this.queries = new ArrayList<>();
     }
 
     public <T extends Select> void add(T selectQuery) {this.queries.add((Query) selectQuery);}
@@ -24,4 +29,13 @@ public class Transaction implements Serializable {
         this.queries.remove(index);
     }
 
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Transaction ").append(transactionId).append("{\n");
+        for (Query query : this.getQueries())
+            sb.append(query.toString()).append("\n");
+        sb.append("}");
+        return sb.toString();
+    }
 }

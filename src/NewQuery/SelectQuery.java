@@ -1,12 +1,13 @@
 package NewQuery;
 
+import NewQuery.Interfaces.Select;
+
 import java.io.Serializable;
 import java.util.Map;
 
 public class SelectQuery extends Query implements Serializable, Select {
     public SelectQuery(String className, Map<String, String> fieldTypes) {
-        super.setClassName(className);
-        super.setFieldTypes(fieldTypes);
+        super(className, command.READ, fieldTypes);
     }
 
     @Override
@@ -16,14 +17,10 @@ public class SelectQuery extends Query implements Serializable, Select {
             super.addCondition(condition);
         return this;
     }
-
-    @Override
-    public Select first() {
-        return this;
-    }
-
+    
     @Override
     public Select all() {
+        super.setModifier();
         return this;
     }
 }
