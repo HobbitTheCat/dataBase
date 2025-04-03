@@ -3,6 +3,7 @@ package NewQuery;
 import Exceptions.ORMUsageException;
 import NewQuery.Interfaces.Update;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 
 public class CreateQuery extends Query implements Update {
@@ -22,6 +23,7 @@ public class CreateQuery extends Query implements Update {
 
     @Override
     public Update object(Object object) {
+        super.setAttributeObject(object);
         return this;
     }
 }

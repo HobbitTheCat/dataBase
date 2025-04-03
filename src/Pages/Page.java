@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>
  * Description: parent class representing the interface for interacting with pages (minimum amount of information stored)
  * <p>
- * Version: 2.5
+ * Version: 4.0
  * <p>
  * Date 03/17
  * <p>
@@ -165,28 +165,69 @@ public abstract class Page {
      * @param sizeNeeded the size of the required area for data placement
      *
      */
-    protected short getNextFreeOffset(int sizeNeeded){
-        short freeOffset = this.getFirstFree(); //0
-        if(freeOffset < 0 || freeOffset + 4 > Page.freePageSize) return -1;
-        while (freeOffset != -1){
-            if(freeOffset + 4 > Page.freePageSize) return -1;
+//    protected short getNextFreeOffset(int sizeNeeded){
+//        short freeOffset = this.getFirstFree(); //0
+//        if(freeOffset < 0 || freeOffset + 4 > Page.freePageSize) return -1;
+//        while (freeOffset != -1){
+//            if(freeOffset + 4 > Page.freePageSize) return -1;
+//            this.setCursor(freeOffset);
+//            short nextFree = this.readShort();      //70
+//            short thisFreeSize = this.readShort();  //70
+//            if (thisFreeSize >=  sizeNeeded){       //true
+//                if(thisFreeSize >= sizeNeeded + 4){
+//                    this.setFirstFree((short) (freeOffset + sizeNeeded));
+//                    this.setCursor(freeOffset + sizeNeeded);
+//                    this.writeShort(nextFree);
+//                    this.writeShort((short) (thisFreeSize - sizeNeeded));
+//                }else{
+//                    this.setFirstFree(nextFree);
+//                }
+//                this.setCursor(freeOffset);
+//                return freeOffset;
+//            }
+//            freeOffset = nextFree;
+//        }
+//        return -1;
+//    }
+
+    protected short getNextFreeOffset(int sizeNeeded) {
+        short freeOffset = this.getFirstFree(); // 0
+        if (freeOffset < 0 || freeOffset + 4 > Page.freePageSize) return -1;
+        short prevOffset = -1;
+        while (freeOffset != -1) {
+            if (freeOffset + 4 > Page.freePageSize) return -1;
             this.setCursor(freeOffset);
-            short nextFree = this.readShort();      //70
-            short thisFreeSize = this.readShort();  //70
-            if (thisFreeSize >=  sizeNeeded){       //true
-                if(thisFreeSize >= sizeNeeded + 4){
-                    this.setFirstFree((short) (freeOffset + sizeNeeded));
+            short nextFree = this.readShort();
+            short thisFreeSize = this.readShort();
+
+            if (thisFreeSize >= sizeNeeded) {
+                if (thisFreeSize >= sizeNeeded + 4) {
                     this.setCursor(freeOffset + sizeNeeded);
                     this.writeShort(nextFree);
                     this.writeShort((short) (thisFreeSize - sizeNeeded));
-                }else{
-                    this.setFirstFree(nextFree);
+
+                    if (prevOffset == -1) {
+                        this.setFirstFree((short) (freeOffset + sizeNeeded));
+                    } else {
+                        this.setCursor(prevOffset);
+                        this.writeShort((short) (freeOffset + sizeNeeded));
+                    }
+                } else {
+                    if (prevOffset == -1) {
+                        this.setFirstFree(nextFree);
+                    } else {
+                        this.setCursor(prevOffset);
+                        this.writeShort(nextFree);
+                    }
                 }
+
                 this.setCursor(freeOffset);
                 return freeOffset;
             }
+            prevOffset = freeOffset;
             freeOffset = nextFree;
         }
+
         return -1;
     }
 
@@ -204,6 +245,7 @@ public abstract class Page {
         }else this.setCursor(offset + 4);
     }
     protected void releaseOffset(short offset, short customDataSize){
+//        System.out.println("Освобождаем " +  offset + " с размером "+ customDataSize);
         this.dataSize = customDataSize;
         this.releaseOffset(offset);
     }

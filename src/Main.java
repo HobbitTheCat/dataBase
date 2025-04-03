@@ -3,6 +3,7 @@ import TableManager.TableDescription;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -10,7 +11,7 @@ public class Main {
     public static void main(String[] args) {
 //        stringPageTest();
 //        objectPageTest();
-//        metaPageTest();
+        metaPageTest();
 
 //        int[] test = new int[4];
 //        int test;
@@ -28,18 +29,26 @@ public class Main {
 
     public static void metaPageTest(){
         TableDescription dc1 = new TableDescription(1, "City", new String[]{"name", "capacity", "country"}, new int[]{2,3,4});
-        TableDescription dc2 = new TableDescription(5, "Person", new String[]{"name", "age", "gender"}, new int[]{6,7,8});
+        TableDescription dc2 = new TableDescription(9, "Car", new String[]{"name", "capacity", "country", "speed"}, new int[]{10,11,12,13});
+        TableDescription dc3 = new TableDescription(20, "Crocodile", new String[]{"name", "capacity", "country", "speed", "teethNumber"}, new int[]{14,15,16,17,18});
+//        TableDescription dc4 = new TableDescription(5, "Person", new String[]{"name", "age", "gender"}, new int[]{6,7,8});
         MetaPage mp =  new MetaPage(0);
         System.out.println(mp);
         mp.add(dc1);
         mp.add(dc2);
-        System.out.println(mp);
-        System.out.println(mp.getClassByName("City"));
+        mp.add(dc3);
+        System.out.println("After adding all 3\n" + mp);
+        System.out.println("Searched: " + mp.searchTableByName("Crocodile"));
+//        System.out.println(mp.getClassByName("City"));
+
         mp.deleteClassByName("City");
-        System.out.println(mp);
-        System.out.println(mp.getClassByName("Person"));
-        mp.add(dc1);
-        System.out.println(mp);
+        System.out.println("After deleting City\n" + mp);
+        mp.deleteClassByName("Car");
+        System.out.println("After deleting Car\n" + mp);
+        System.out.println("After deleting City\n" + mp.getClassByName("Crocodile"));
+//        mp.add(dc2);
+//        System.out.println("After adding Car back\n" + mp);
+//        System.out.println(mp.getClassByName("Crocodile"));
     }
 
     public static void objectPageTest(){

@@ -1,5 +1,7 @@
 package NewQuery;
 
+import Exceptions.ORMUsageException;
+
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.*;
@@ -24,6 +26,7 @@ public abstract class Query implements Serializable {
     public String getAttributeTypeByName(String name) {return this.attributeTypes.get(name);}
     public Map<String, String> getAttributeTypes(){return this.attributeTypes;}
     public ArrayList<Condition> getConditions() {return this.conditions;}
+    public boolean applyToAll(){return this.modifier == NewQuery.modifier.ALL;}
 
     protected void addCondition(Condition condition){ this.conditions.add(condition);}
     protected void addAttributeNames(String attributeName){this.attributeNames.add(attributeName);}
@@ -105,12 +108,35 @@ public abstract class Query implements Serializable {
         return this.providedTypeConsistentWithValue(this.getAttributeTypeByName(attributeName), value);
     }
 
+    protected boolean hasAttribute(String attributeName) {
+        return this.attributeTypes.containsKey(attributeName);
+    }
+
+    protected void setAttributeObject(Object object){
+        Class<?> clazz = object.getClass();
+        if (!clazz.getName().equals(this.name)) throw new ORMUsageException("Provided class is not the same as the object class");
+        for(Field field : clazz.getDeclaredFields()){
+            field.setAccessible(true);
+            String fieldName = field.getName();
+            this.addAttributeNames(fieldName);
+            try{
+                this.addAttributeValue(fieldName, field.get(object));
+            } catch (IllegalAccessException e) {
+                this.addAttributeValue(fieldName, null);
+            }
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("Query {");
-        sb.append("Need to ").append(this.operationType).append(": ").append(this.name).append(", ");
+        sb.append("Need to ").append(this.operationType);
+        if (this.operationType == command.READ ||  this.operationType == command.DELETE ||   this.operationType == command.UPDATE)
+            if (this.applyToAll()) sb.append(" all"); else sb.append(" one");
+        sb.append(": ").append(this.name).append(",");
+
         if (this.operationType == command.READ ||  this.operationType == command.DELETE ||   this.operationType == command.UPDATE) {
-            sb.append("where [");
+            sb.append(" where [");
             for(int i = 0; i < this.conditions.size(); i++) {
                 sb.append(conditions.get(i));
                 if(i < this.conditions.size() - 1)
@@ -119,7 +145,7 @@ public abstract class Query implements Serializable {
             sb.append("]");
         }
         if (this.operationType == command.CREATE || this.operationType == command.UPDATE) {
-            sb.append("with [");
+            sb.append(" change [");
             for(int i = 0; i < this.attributeNames.size(); i++) {
                 sb.append(attributeNames.get(i)).append(" = ").append(this.attributeValues.get(this.attributeNames.get(i)));
                 if(i < this.attributeNames.size() - 1)
@@ -128,10 +154,6 @@ public abstract class Query implements Serializable {
             sb.append("]");
         }
         return sb.append("}").toString();
-    }
-
-    protected boolean hasAttribute(String attributeName) {
-        return this.attributeTypes.containsKey(attributeName);
     }
 }
 

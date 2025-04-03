@@ -6,8 +6,10 @@ public class UsageExample {
 
         Session session = new Session();
         Transaction transaction = session.createNewTransaction();
-        transaction.add(Query.select(Hero.class).where("name", "==", "Tommy Sharp").where("age", ">", 35));
-        transaction.add(Query.create(Hero.class).attribute("name", hero.name).attribute("age", hero.age).attribute("secretName", hero.secretName));
+        transaction.add(Query.select(Hero.class).where("name", "==", "Tommy Sharp").where("age", ">", 35).all());
+        transaction.add(Query.create(Hero.class).object(hero));
+        transaction.add(Query.update(Hero.class).where("name", "contains", "Pedro").attribute("name", "Pedro Ivanov"));
+        transaction.add(Query.delete(Hero.class).where("name", "=", "tommy sharp"));
         System.out.println(transaction);
         Result[] results = session.execute(transaction);
     }

@@ -12,7 +12,9 @@ public class DeleteQuery extends Query implements Select, Serializable {
 
     @Override
     public DeleteQuery where(String attrName, String operator, Object value) {
-        super.addCondition(new Condition(attrName, operator, value));
+        Condition condition = new Condition(attrName, operator, value);
+        if (super.conditionIsApplicable(condition))
+            super.addCondition(condition);
         return this;
     }
 

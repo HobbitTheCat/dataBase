@@ -19,10 +19,8 @@ public class Transaction implements Serializable {
         this.queries = new ArrayList<>();
     }
 
-    public <T extends Select> void add(T selectQuery) {this.queries.add((Query) selectQuery);}
-    public <T extends Update> void add(T updateQuery) {this.queries.add((Query) updateQuery);}
-    public <T extends CreateQuery> void add(T createQuery) {this.queries.add((Query) createQuery);}
-    public <T extends DeleteQuery> void add(T deleteQuery) {this.queries.add((Query) deleteQuery);}
+    public void add(Select selectQuery) { this.queries.add((Query) selectQuery); }
+    public void add(Update updateQuery) { this.queries.add((Query) updateQuery); }
 
 
     public void remove(int index){

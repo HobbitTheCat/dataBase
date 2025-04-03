@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import Interface.*;
 import TableManager.TableDescription;
 
@@ -50,7 +53,7 @@ public class MetaPage extends Page implements MetaDataPage{
 
 
     public short add(TableDescription dataClass){
-        if(this.getClassOffsetByName(dataClass.getName()) != -1) throw new IllegalArgumentException("Table " + dataClass.getName() + " already exists");
+        if(this.searchTableByName(dataClass.getName()) != -1) throw new IllegalArgumentException("Table " + dataClass.getName() + " already exists");
         byte[] name = dataClass.getName().getBytes(StandardCharsets.UTF_8);
         if(name.length > MetaPage.stringSize) throw new IllegalArgumentException("Table name is too long");
         byte[] bytes = new byte[MetaPage.stringSize];
@@ -80,7 +83,7 @@ public class MetaPage extends Page implements MetaDataPage{
     }
 
     public TableDescription getClassByName(String className){
-        short offset = this.getClassOffsetByName(className);
+        short offset = this.searchTableByName(className);
         if(offset == -1) return null;
         return this.getClassByOffset(offset);
     }
@@ -102,62 +105,83 @@ public class MetaPage extends Page implements MetaDataPage{
     }
 
     public boolean deleteClassByName(String className){
-        short offset = this.getClassOffsetByName(className);
+        short offset = this.searchTableByName(className);
         if(offset == -1) return false; // do while delete == false or getNextPage = -1
-        this.setCursor(offset + 2);
+        this.setCursor(offset + 2); //тут переставляем для чтения количества атрибутов у класса
         this.releaseOffset(offset, (short)(MetaPage.metaInfoSize + this.readShort() * (MetaPage.stringSize + MetaPage.linkSize)));
         return true;
     }
 
-    public short getClassOffsetByName(String className){
-        short nextFree = this.getFirstFree(); //276
-        short sum = 0;
-        while (nextFree != -1){
-            while(sum < nextFree){
-                this.setCursor(sum); //0
-                short add = this.readShort();
-                this.setCursor(sum + 8);
-                if(className.equals(new String(this.readBytes(MetaPage.stringSize), StandardCharsets.UTF_8).trim()))
-                    return sum;
-                sum += add;
+    public Map<Integer, Integer> getPageMap(){
+        Map<Integer,Integer> pageMap = new HashMap<>();
+        short freeAddress = this.getFirstFree();
+        while (freeAddress != -1){
+            this.setCursor(freeAddress);
+            short nextFreeAddress = this.readShort();
+            short sizeOfFreeSpace = this.readShort();
+            pageMap.put((int) freeAddress, freeAddress+sizeOfFreeSpace);
+            freeAddress = nextFreeAddress;
+        }
+        return pageMap;
+    }
+    public short searchTableByName(String tableName){
+        byte[] tableNameBytes = tableName.getBytes(StandardCharsets.UTF_8);
+        int cursor = 0;
+        Map<Integer, Integer> pageMap = this.getPageMap();
+
+        while (cursor != Page.freePageSize){
+            Integer nextStep = pageMap.get(cursor);
+            while(nextStep == null){
+                this.setCursor(cursor);
+                short currentTableDescriptionLength = this.readShort();
+                this.setCursor(cursor + 8);
+                byte[] readBytes = this.readBytes((short) tableNameBytes.length);
+                if (readBytes.length == tableNameBytes.length && Arrays.equals(tableNameBytes, readBytes)) {
+                    return  (short) cursor;
+                }
+                cursor += currentTableDescriptionLength;
+                nextStep = pageMap.get(cursor);
             }
-            this.setCursor(nextFree);
-            nextFree = this.readShort();
-            sum += this.readShort();
+            cursor = nextStep;
         }
         return -1;
     }
+
     /**
      * Additional functions
      */
     public String toString(){
-        short nextFree = this.getFirstFree();
-        int maxLength = 0;
+        Map<Integer,Integer> pageMap = new HashMap<>();
+
         ArrayList<StringBuilder> rows = new ArrayList<>();
+        short freeAddress = this.getFirstFree();
+        while (freeAddress != -1){
+            this.setCursor(freeAddress);
+            short nextFreeAddress = this.readShort();
+            short sizeOfFreeSpace = this.readShort();
+            StringBuilder row = new StringBuilder("│ Free index: ").append(freeAddress).append(", Next ");
+            row.append(nextFreeAddress);
+            row.append(", Size ").append(sizeOfFreeSpace);
+            rows.add(row);
+            pageMap.put((int) freeAddress, freeAddress+sizeOfFreeSpace);
+            freeAddress = nextFreeAddress;
+        }
 
-        short sum = 0;
-
-        int count = 0;
-        while (nextFree != -1 && count < 5){
-            while(sum < nextFree){ //скорее всего ломается, если между занятым и следующим блоком есть небольшой зазор
-                this.setCursor(sum);
-                short length = this.readShort();
-                StringBuilder builder = this.resolveMetaInfo(sum);
-                if(builder.length() > maxLength) maxLength = builder.length();
-                rows.add(builder);
-                sum += length;
+        int cursor = 0;
+        while (cursor != Page.freePageSize){
+            Integer nextStep = pageMap.get(cursor);
+            while(nextStep == null){
+                this.setCursor(cursor);
+                short currentTableDescriptionLength = this.readShort();
+                rows.add(this.resolveMetaInfo((short) cursor));
+                cursor += currentTableDescriptionLength;
+                nextStep = pageMap.get(cursor);
             }
-
-            StringBuilder builder = new StringBuilder();
-            this.setCursor(nextFree);
-            nextFree = this.readShort();
-            short currentFreeLength = this.readShort();
-            sum += currentFreeLength;
-            builder.append("│ Free: Next ").append(nextFree);
-            builder.append(" Size ").append(currentFreeLength);
-            rows.add(builder);
-            if(builder.length() > maxLength) maxLength = builder.length();
-            count++;
+            cursor = nextStep;
+        }
+        int maxLength = 0;
+        for (StringBuilder row : rows){
+            if(row.length() > maxLength) maxLength = row.length();
         }
 
         return super.assemblyString(maxLength, rows.toArray(new StringBuilder[0]));
