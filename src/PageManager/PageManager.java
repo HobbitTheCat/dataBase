@@ -8,6 +8,18 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Name of class: PageManager
+ * <p>
+ * Description: Prevents from deadlock situations using graph algorithms, watch dogs, and sorts pages by index.
+ * <p>
+ * Version: 3.0
+ * <p>
+ * Date 03/19
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class PageManager {
     private final Map<Thread, Set<Page>> threadToResourcesHeld;
     private final Map<Thread, Set<Page>> threadToResourcesWaiting;

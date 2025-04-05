@@ -6,8 +6,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import Exceptions.StorageOperationException;
-import Interface.*;
 import NewQuery.Condition;
+import Pages.Interface.BackLinkPage;
+
+/**
+ * Name of class: StringPage
+ * <p>
+ * Description: Stores data in the form of Strings
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/17
+ * <p>
+ * Copyright: Semenov Egor
+ */
 
 public class StringPage extends Page implements BackLinkPage<String> {
     private static final short stringSize = 64;
@@ -113,8 +125,9 @@ public class StringPage extends Page implements BackLinkPage<String> {
     }
 
     @Override
-    public void replaceSamePlace(short index, String string, Address objectAddress) {
+    public void replaceSamePlace(short index, String string) {
         this.validateIndex(index);
+        Address objectAddress = (Address) this.getStringByIndexWithMeta(index)[0];
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         this.validateSize(bytes);
         this.setCursor(index*(StringPage.totalSize));

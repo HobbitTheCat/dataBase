@@ -7,6 +7,18 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * Name of class: Transaction
+ * <p>
+ * Description: A set of queries that supports ACID properties
+ * <p>
+ * Version: 4.0
+ * <p>
+ * Date 03/30
+ * <p>
+ * Copyright: Lemain Mathieu
+ */
+
 public class Transaction implements Serializable {
     private final ArrayList<Query> queries;
     private final int transactionId;
@@ -14,7 +26,7 @@ public class Transaction implements Serializable {
     public int getTransactionId() {return transactionId;}
     public  Query[] getQueries() {return queries.toArray(new Query[0]);}
 
-    Transaction(int transactionId) {
+    public Transaction(int transactionId) {
         this.transactionId = transactionId;
         this.queries = new ArrayList<>();
     }

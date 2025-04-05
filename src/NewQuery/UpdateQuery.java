@@ -8,6 +8,18 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+/**
+ * Name of class: UpdateQuery
+ * <p>
+ * Description: represents the update query type. Inherits from Query.
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/21
+ * <p>
+ * Copyright: Semenov Egor, Matheu Lemain
+ */
+
 public class UpdateQuery extends Query implements Serializable, Update {
 
     public UpdateQuery(String className, Map<String, String>  fieldTypes) {
@@ -27,7 +39,7 @@ public class UpdateQuery extends Query implements Serializable, Update {
     }
 
     @Override
-    public UpdateQuery attribute(String attrName, Object value) {
+    public UpdateQuery set(String attrName, Object value) {
         if (super.hasAttribute(attrName))
             super.addAttributeNames(attrName);
         else throw new ORMUsageException("Attribute " + attrName + " is not present in " + this.getName());

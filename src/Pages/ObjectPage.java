@@ -1,12 +1,25 @@
 package Pages;
-import Interface.*;
+import Pages.Interface.DataPage;
+
 import java.nio.ByteBuffer;
 
-public class ObjectPage extends Page implements DataPage<Address[]>{
+/**
+ * Name of class: ObjectPage
+ * <p>
+ * Description: Contains links to set values.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 03/30
+ * <p>
+ * Copyright: Lemain Mathieu
+ */
+
+public class ObjectPage extends Page implements DataPage<Address[]> {
 
 
     private final short objectLength; //number of attributes
-    private static final short linkSize = 6;
+    private static final short linkSize = Address.ADDRESS_SIZE;
     private static final short type = 1;
 
     public short getObjectLength(){return this.objectLength;}
@@ -46,7 +59,7 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
         return result;
     }
 
-    public int append(Address[] objectLinks) {
+    public int add(Address[] objectLinks) {
         if(objectLinks.length > this.objectLength) throw new IllegalArgumentException("Array is too long");
         short freeAddress = this.getNextFreeOffset(this.objectLength*ObjectPage.linkSize);
         if (freeAddress == -1) return -1;
@@ -68,6 +81,11 @@ public class ObjectPage extends Page implements DataPage<Address[]>{
         }
         this.setCursor(offset);
         for(Address objectLink : objectLinks) this.writeAddress(objectLink);
+    }
+
+    public void replaceAddress(int index, int addressIndex, Address newAddress){
+        this.setCursor(index + addressIndex*ObjectPage.linkSize);
+        this.writeAddress(newAddress);
     }
 
     @Override

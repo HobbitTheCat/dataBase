@@ -1,4 +1,4 @@
-package Interface;
+package Pages.Interface;
 
 import TableManager.TableDescription;
 

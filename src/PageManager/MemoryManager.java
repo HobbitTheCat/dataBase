@@ -16,6 +16,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Name of class: MemoryManager
+ * <p>
+ * Description: Implements a swap strategy (LFU) in the virtual memory, supports the concept of dirty pages, as long as the allocation and deallocation of resouces.
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/17
+ * <p>
+ * Copyright: Semenov Egor, Mathieu Lemain
+ */
+
 public class MemoryManager {
     private static final short FREE_PAGE_TYPE = 99;
     private final int pageSize = 4096;

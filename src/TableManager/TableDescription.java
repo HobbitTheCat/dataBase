@@ -2,6 +2,18 @@ package TableManager;
 
 import java.util.Map;
 
+/**
+ * Name of class: TableDescription
+ * <p>
+ * Description: Describes a Table without reflexion.
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/27
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class TableDescription {
     private final int attributeNumber;
     private int objectPage;

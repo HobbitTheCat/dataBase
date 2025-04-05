@@ -3,6 +3,18 @@ package Pages;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Name of class: HeaderPage
+ * <p>
+ * Description: Contains the database version number as well as the index of the first free page available.
+ * <p>
+ * Version: 4.0
+ * <p>
+ * Date 03/27
+ * <p>
+ * Copyright: Lemain Mathieu, Semenov Egor
+ */
+
 public class HeaderPage extends Page{
     /**
      * Header page construction:

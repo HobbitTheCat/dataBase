@@ -1,7 +1,7 @@
 package Pages;
 
 import Exceptions.StorageOperationException;
-import Interface.BackLinkPage;
+import Pages.Interface.BackLinkPage;
 import NewQuery.Condition;
 
 import java.nio.ByteBuffer;
@@ -91,8 +91,9 @@ public class LongPage extends Page implements BackLinkPage<Long> {
     }
 
     @Override
-    public void replaceSamePlace(short index, Long value, Address objectAddress) {
+    public void replaceSamePlace(short index, Long value) {
         this.validateIndex(index);
+        Address objectAddress = (Address) this.getLongByIndexWithMeta(index)[0];
         this.setCursor(index*LongPage.totalSize);
         this.writeAddress(objectAddress);
         this.writeLong(value);

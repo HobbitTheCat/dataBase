@@ -54,7 +54,7 @@ public class Main {
     public static void objectPageTest(){
         ObjectPage op = new ObjectPage((short) 1, 11);
 //        System.out.println(op);
-        int index = op.append(new Address[] {new Address(2,0)}); //, new Address(3, 10),
+        int index = op.add(new Address[] {new Address(2,0)}); //, new Address(3, 10),
 //                new Address(4, 20), new Address(5, 3), new Address(6, 15),});
         System.out.println(index);
         System.out.println(op);

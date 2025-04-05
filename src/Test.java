@@ -16,7 +16,7 @@ public class Test {
 
     public static void main(String[] args) {
         TableDescription td = createTable();
-        createObjects(td);
+//        createObjects(td);
         searchObjects(td);
 
         FilePageLoader loader = new FilePageLoader(dataPath);
@@ -26,9 +26,6 @@ public class Test {
 
         ByteBuffer buffer = loader.load(2);
         ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
-        System.out.println(objectPage);
-        buffer = loader.load(11);
-        objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
         System.out.println(objectPage);
 
 
@@ -51,7 +48,7 @@ public class Test {
     public static void createObjects(TableDescription td){
         String[] cityNames = new String[]{"Dijon", "Paris", "Seoul", "London", "Daegu", "Saint-Petersburg", "Moscow"};
 
-        for(int i = 0; i < 1; i ++) {
+        for(int i = 0; i < 100; i ++) {
             Random random = new Random();
             Map<String, Object> attrValues = new HashMap<>();
             attrValues.put("capacity", random.nextInt(1000, 100000));
@@ -62,10 +59,10 @@ public class Test {
 
     public static void searchObjects(TableDescription td){
         Condition cond1 = new Condition("name", "contains", "on");
-//        Condition  cond2 = new Condition("capacity", "<", 50000);
+        Condition  cond2 = new Condition("capacity", "<", 50000);
         ArrayList<Condition> conditionList = new ArrayList<>();
         conditionList.add(cond1);
-//        conditionList.add(cond2);
+        conditionList.add(cond2);
 
         ArrayList<Map<String, Object>> map = tm.searchObject(td, conditionList);
         Map<String, Object>[] canByStringify = map.toArray(new Map[0]);

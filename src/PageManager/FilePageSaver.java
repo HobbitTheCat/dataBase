@@ -5,6 +5,18 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+/**
+ * Name of class: FilePageSaver
+ * <p>
+ * Description: Saves a page (the page's byte buffer) inside a file
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/16
+ * <p>
+ * Copyright: Lemain Mathieu
+ */
+
 public class FilePageSaver implements MemoryManager.PageSaver{
     private final String filePath;
     private final int pageSize = 4096;

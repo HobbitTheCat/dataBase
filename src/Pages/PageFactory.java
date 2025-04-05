@@ -2,6 +2,18 @@ package Pages;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Name of class: PageFactory
+ * <p>
+ * Description: Generates a page from a page content.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 03/30
+ * <p>
+ * Copyright: Lemain Mathieu
+ */
+
 public class PageFactory {
     public static Page createPage(ByteBuffer buffer, int pageIndex){
         int type = buffer.getShort(0);

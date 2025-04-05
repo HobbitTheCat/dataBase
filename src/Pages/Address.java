@@ -1,6 +1,19 @@
 package Pages;
 
+/**
+ * Name of class: Address
+ * <p>
+ * Description: Represents the adress of a piece of data using the page index and an offset.
+ * <p>
+ * Version: 4.0
+ * <p>
+ * Date 03/25
+ * <p>
+ * Copyright: Lemain Mathieu
+ */
+
 public class Address {
+    public static final int ADDRESS_SIZE = 6;
     private final int pageNumber;
     private final short offset;
 
@@ -17,6 +30,11 @@ public class Address {
     public Address(int pageNumber, int offset) {
         this.pageNumber = pageNumber;
         this.offset = (short) offset;
+    }
+
+
+    public boolean equals(Address address){
+        return this.pageNumber == address.getPageNumber() && this.offset == address.getOffset();
     }
 
     @Override

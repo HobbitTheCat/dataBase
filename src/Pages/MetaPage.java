@@ -7,8 +7,20 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import Interface.*;
+import Pages.Interface.MetaDataPage;
 import TableManager.TableDescription;
+
+/**
+ * Name of class: MetaPage
+ * <p>
+ * Description: Type for containing data about the stored classes.
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/20
+ * <p>
+ * Copyright: Semenov Egor
+ */
 
 //похоже нужно каждому листу присваивать его адрес, что бы можно было бы передать лист в качестве параметра
 //при чем хранить индекс нужно в супер классе, что бы можно было в Address сменить pageNumber просто на Page, тогда можно будет еще и ти запрашивать
@@ -20,7 +32,7 @@ import TableManager.TableDescription;
 //Варианты решения:
 //Сначала создаем объект, в ObjectPage, а затем добавляем атрибуты.
 
-public class MetaPage extends Page implements MetaDataPage{
+public class MetaPage extends Page implements MetaDataPage {
     /**
      * Meta info object (before parameters):
      * <ul>
@@ -112,7 +124,15 @@ public class MetaPage extends Page implements MetaDataPage{
         return true;
     }
 
-    public Map<Integer, Integer> getPageMap(){
+//    private void defragmentation(){
+//        Map<Integer, Integer> pageMap = this.getPageMap();
+//        int cursor = 0;
+//        while(cursor != Page.freePageSize){
+//
+//        }
+//    }
+
+    private Map<Integer, Integer> getPageMap(){
         Map<Integer,Integer> pageMap = new HashMap<>();
         short freeAddress = this.getFirstFree();
         while (freeAddress != -1){

@@ -6,6 +6,18 @@ import NewQuery.Result;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Name of class: QueryToAction
+ * <p>
+ * Description: Describe a table from a query and consequently calls for functions of the table manager.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/02
+ * <p>
+ * Copyright: Lemain Mathieu, Semenov Egor
+ */
+
 public class QueryToAction {
     private final TableManager tableManager;
 

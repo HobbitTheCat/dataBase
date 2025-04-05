@@ -6,6 +6,18 @@ import java.util.Map;
 
 enum statusVariants{OK, ERROR, UNKNOWN};
 
+/**
+ * Name of class: Result
+ * <p>
+ * Description: Data type for storing the result of a Query once it's been executed.
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/17
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class Result implements Serializable {
     // somehow stock results of one operation of transaction
     // maybe we need to stock here a list of results instead of returning a Result[]

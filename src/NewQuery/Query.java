@@ -7,6 +7,18 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Name of class: Query
+ * <p>
+ * Description: Common patern for representing a Query, different types of query inherits from this class
+ * <p>
+ * Version: 2.0
+ * <p>
+ * Date 03/13
+ * <p>
+ * Copyright: Semenov Egor, Lemain Mathieu
+ */
+
 public abstract class Query implements Serializable {
     protected final command operationType; // type of operation that need's to be done with DB - enum CREATE, READ, UPDATE, DELETE
     private final String name; // class name
@@ -72,7 +84,7 @@ public abstract class Query implements Serializable {
         if (!providedTypeConsistentWithValue(attributeType, value))
             throw new IllegalArgumentException("Attribute type " + attributeType + " is not consistent with provided value: " + value + " whose type is: " + value.getClass());
         if (!operationIsApplicableToSelectedType(attributeType, operator))
-            throw new IllegalArgumentException("Condition " + operator + " is not applicable for attribute type: " + attributeType);
+            throw new IllegalArgumentException("Condition " + operator + " is not applicable for set type: " + attributeType);
         return true;
     }
 
@@ -85,7 +97,7 @@ public abstract class Query implements Serializable {
                 return (operator.equals("==") || operator.equals(">") || operator.equals("<") || operator.equals(">=") || operator.equals("<=") || operator.equals("!="));
             }
             default -> {
-                throw new IllegalArgumentException("Unsupported attribute type: " + attributeType);
+                throw new IllegalArgumentException("Unsupported set type: " + attributeType);
             }
         }
     }
@@ -99,7 +111,7 @@ public abstract class Query implements Serializable {
             case "Short", "short" -> { return value instanceof Short;}
             case "Float", "float" -> { return value instanceof Float;}
             default -> {
-                throw new IllegalArgumentException("Unsupported attribute type: " + attributeType);
+                throw new IllegalArgumentException("Unsupported set type: " + attributeType);
             }
         }
     }
