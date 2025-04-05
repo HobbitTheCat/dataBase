@@ -14,7 +14,7 @@ import java.util.function.Function;
  * <p>
  * Description: Makes us able to execute actions on the database, mostly complicated stuff.
  * <p>
- * Version: 2.0
+ * Version: 3.0
  * <p>
  * Date 03/30
  * <p>
@@ -34,24 +34,25 @@ public class TableManager {
     /**
      * Table lookup functions
      */
-
-    public TableDescription searchForTable(String tableName){
-        MetaPage metaPage = (MetaPage) this.acquirePage(1);
-        return this.searchTable(tableName, metaPage);
+    public TableDescription searchTable(String tableName) {
+        try {
+            MetaPage metaPage = (MetaPage) this.acquirePage(1);
+            return this.searchTable(tableName, metaPage);
+        } finally {
+            this.releaseAllPages();
+        }
     }
 
     private TableDescription searchTable(String tableName, MetaPage metaPage){
         TableDescription table;
         MetaPage pageToUse = metaPage;
-        do{
+        while(pageToUse != null){
             table = pageToUse.getClassByName(tableName);
-            if (table != null) return table;
-            int nextPage = pageToUse.getNextPage();
-            if(pageToUse != metaPage) this.releasePage(metaPage);
-            if(nextPage == -1) return null;
-            pageToUse = (MetaPage) this.acquirePage(nextPage);
-            if(pageToUse == null) return null;
-        }while(pageToUse.getNextPage() != -1);
+            if(table != null) return table;
+            int nextPageIndex = pageToUse.getNextPage();
+            if(pageToUse != metaPage) this.releasePage(pageToUse);
+            pageToUse = (nextPageIndex != -1) ? (MetaPage) this.acquirePage(nextPageIndex) : null;
+        }
         return null;
     }
 
@@ -362,7 +363,7 @@ public class TableManager {
                             case "string" -> {
                                 address = this.insertIntoStringPage((StringPage) page, (String) value, addressOfNewObject);
                             }
-                            case "integer", "int", "long", "short", "byte", "double" -> { //not schure about double
+                            case "integer", "int", "long", "short", "byte" -> { //not sure about double
                                 address = this.insertIntoLongPage((LongPage) page, ((Number) value).longValue(), addressOfNewObject);
                             }
                             default -> {
@@ -446,65 +447,6 @@ public class TableManager {
         return actualConditions;
     }
 
-//    // functions to change objects attributes
-//    public void changeObject(TableDescription changeVictim, ArrayList<Condition> conditions, Map<String, Object> attributesValues) {
-//        try{
-//            TableDescription tableOfObject = this.getTableByNameWithRelease(changeVictim.getName());
-//            ArrayList<Condition> actualConditions = this.sortingApplicableConditions(tableOfObject, conditions);
-//
-//            int [] indexesToChange = new int[attributesValues.size()];
-//            Map<Integer, Object> indexWithObjectValues = new HashMap<>();
-//            int count = 0;
-//            Object newValue;
-//            for (String name: tableOfObject.getAttributesNames()){
-//                if((newValue = attributesValues.get(name)) != null){
-//                    int internalIndex = tableOfObject.getAttributeInternalIndexByName(name);
-//                    indexesToChange[count] = internalIndex;
-//                    count++;
-//                    indexWithObjectValues.put(internalIndex, newValue);
-//                }
-//              }
-//
-//            if(actualConditions.isEmpty()){
-//                ObjectPage objectPage = (ObjectPage) this.acquirePage(tableOfObject.getObjectPage());
-//
-//                while(objectPage != null){
-//                    Address[] addresses = objectPage.getAllObjectAddresses();
-//                    for(Address address : addresses){
-//                        Address[] addressesOnPage = objectPage.get(address.getOffset());
-//                        for (int j : indexesToChange) {
-//                            Address addressToChange = addressesOnPage[j];
-//                            this.changeValueOfObject((BackLinkPage) this.acquirePage(addressToChange.getPageNumber()),
-//                                    objectPage, indexWithObjectValues.get(j), addressToChange, address);
-//                        }
-//                    }
-//                    int nextPageIndex = objectPage.getNextPage();
-//                    objectPage = (nextPageIndex != -1) ?  (ObjectPage) this.acquirePage(nextPageIndex) : null;
-//                }
-//            }
-//            // тут крч ищем список подходящих адресов на ObjectPage
-//            // делаем то же что и в предыдущем случае после получения всех адресов из ObjectPage
-//
-//
-//        } finally {
-//            this.releaseAllPages();
-//        }
-//    }
-//
-//    private <T> void changeValueOfObject(BackLinkPage<T> page,ObjectPage objectPage, T newValue, Address addressToChange, Address backAddress){
-//        if(!addressToChange.isNull()) {
-//            page.replaceSamePlace(addressToChange.getOffset(), newValue);
-//            return;
-//        }
-//        Address newAddress;
-//        switch (page.getType()){
-//            case 2 -> newAddress = this.insertIntoStringPage((StringPage) page,(String) newValue, backAddress);
-//            case 3 -> newAddress = this.insertIntoLongPage((LongPage) page, (Long) newValue, backAddress);
-//            default -> throw new ORMUsageException("Unknown page type: " + page.getType());
-//        }
-//        objectPage.replaceAddress(backAddress.getOffset(), );
-//    } //do not know what to do with this
-
     /**
      * Function for deleting objects
      */
@@ -513,9 +455,92 @@ public class TableManager {
             TableDescription tableOfObject = this.getTableByNameWithRelease(deleteVictim.getName()); //get description of target table
             ArrayList<Condition> actualConditions = this.sortingApplicableConditions(tableOfObject, conditions);
 
+            if(actualConditions.isEmpty()){
+                this.deleteAllObjects((ObjectPage) this.acquirePage(tableOfObject.getObjectPage()));
+                return;
+            }
+
+            Condition fisrtCondition = actualConditions.get(0);
+            Page page = this.acquirePage(tableOfObject.getAttributePageByName(fisrtCondition.attributeName()));
+            ArrayList<Address> addresses = this.searchForAddresses(page, fisrtCondition);
+
+            ArrayList<Address> addressesToDelete = new ArrayList<>();
+            ArrayList<Map<String, Object>> objects = new ArrayList<>();
+            for(Address address : addresses){
+                objects.add(this.restoreObject(tableOfObject, address));
+                addressesToDelete.add(address);
+            }
+
+            for(int i = 1; i < actualConditions.size(); i++) {
+                Condition condition = actualConditions.get(i);
+                String attributeName = condition.attributeName();
+                Iterator<Map<String, Object>> iterator = objects.iterator();
+                Iterator<Address>  iteratorToDelete = addressesToDelete.iterator();
+                while (iterator.hasNext()) {
+                    Map<String, Object> obj = iterator.next();
+                    String attributeType = deleteVictim.getAttributeType(deleteVictim.getAttributeInternalIndexByName(attributeName)).toLowerCase();
+                    switch (attributeType){
+                        case "string" -> {
+                            if (!StringPage.applyCondition((String) obj.get(attributeName), condition.operator(), (String) condition.value())) {
+                                iterator.remove();
+                                iteratorToDelete.remove();
+                            }
+                        }
+                        case "integer", "int", "long", "short", "byte", "double" -> {
+                            if (!LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue())) {
+                                iterator.remove();
+                                iteratorToDelete.remove();
+                            }
+                        }
+                        default -> {
+                            throw new TableManagementException("Unknown set type: " + attributeType);
+                        }
+                    }
+                }
+            }
+
+            for(Address address : addressesToDelete){
+                this.deleteObject(address);
+            }
+
         }finally {
             this.releaseAllPages();
         }
+    }
+
+    public void deleteTable(TableDescription deleteVictim) {
+        try{
+            TableDescription tableOfObject = this.getTableByNameWithRelease(deleteVictim.getName()); //get description of target table
+            String[] attributes = tableOfObject.getAttributesNames();
+            ArrayList<Integer> pagesToDelete = new ArrayList<>(this.getAllPagesToDelete(tableOfObject.getObjectPage()));
+            for(String attributeName : attributes){
+                pagesToDelete.addAll(this.getAllPagesToDelete(tableOfObject.getAttributePageByName(attributeName)));
+            }
+            this.pageManager.deletePages(pagesToDelete);
+            this.deleteTableFromMetaPage(deleteVictim.getName());
+        } finally {
+            this.releaseAllPages();
+        }
+    }
+
+    private void deleteTableFromMetaPage(String tableName){
+        MetaPage metaPage = (MetaPage) this.acquirePage(1);
+        while(metaPage !=  null){
+            if(metaPage.deleteClassByName(tableName)) return;
+            int nextPageIndex = metaPage.getNextPage();
+            metaPage = (nextPageIndex != -1) ? (MetaPage) this.acquirePage(nextPageIndex) : null;
+        }
+    }
+
+    private ArrayList<Integer> getAllPagesToDelete(int firstPageIndex){
+        ArrayList<Integer> pagesToDelete = new ArrayList<>();
+        Page page = this.acquirePage(firstPageIndex);
+        while(page != null){
+            pagesToDelete.add(page.getPageNumber());
+            int nextPageIndex = page.getNextPage();
+            page = (nextPageIndex != -1) ? this.acquirePage(nextPageIndex) : null;
+        }
+        return pagesToDelete;
     }
 
     /**

@@ -25,29 +25,29 @@ public class ClientHandler implements Runnable {
                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
                 ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream())
         ) {
-            // Чтение транзакции от клиента
+            // Reading a transaction from a client
             Transaction transaction = (Transaction) in.readObject();
-            System.out.println("Получена транзакция: " + transaction.getTransactionId());
+            System.out.println("Transaction received: " + transaction.getTransactionId());
 
-            // Создание задачи и добавление в буфер
+            // Creating a task and adding it to the buffer
             TransactionTask task = new TransactionTask(transaction);
             buffer.add(task);
 
-            // Ожидание результата
+            // Expectation of results
             List<Result> results = task.getResultFuture().get();
 
-            // Отправка результата клиенту
+            // Sending the result to the client
             out.writeObject(results);
-            System.out.println("Результат отправлен для транзакции: " + transaction.getTransactionId());
+            System.out.println("Result sent for transaction: " + transaction.getTransactionId());
 
         } catch (Exception e) {
-            System.err.println("Ошибка при обработке клиента: " + e.getMessage());
+            System.err.println("Error while processing client: " + e.getMessage());
             e.printStackTrace();
         } finally {
             try {
                 clientSocket.close();
             } catch (IOException e) {
-                System.err.println("Ошибка закрытия соединения: " + e.getMessage());
+                System.err.println("Error closing connection: " + e.getMessage());
             }
         }
     }

@@ -45,6 +45,7 @@ public class QueryToAction {
     private Result insert(Query query){
         // function to insert object in existing table or create new table (is query.attributeValues.length == 0)
         TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes());
+        System.out.println("Table that we obtain: " + newTable);
         if(query.getAttributeValues().isEmpty()){
             // case of class creation
             try {
@@ -65,10 +66,25 @@ public class QueryToAction {
     }
 
     private Result update(Query query){
-        return null;
+        return new Result("ERROR", "Update query is temporarily inactive.");
     }
 
     private Result delete(Query query){
-        return null;
+        TableDescription newTable = new TableDescription(query.getName(), query.getAttributeNames().toArray(new String[1]), query.getAttributeTypes());
+        if(query.getConditions().isEmpty()){
+            try {
+                this.tableManager.deleteTable(newTable);
+                return new Result("OK");
+            }  catch (Exception e) {
+                return new Result("ERROR", e.getMessage());
+            }
+        } else {
+            try{
+                this.tableManager.deleteObject(newTable, query.getConditions());
+                return new Result("OK");
+            } catch(Exception e){
+                return new Result("ERROR", e.getMessage());
+            }
+        }
     }
 }

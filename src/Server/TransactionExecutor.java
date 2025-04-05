@@ -2,16 +2,19 @@ package Server;
 
 import NewQuery.Result;
 import NewQuery.Transaction;
+import TableManager.QueryToAction;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TransactionExecutor implements Runnable {
+    private final QueryToAction queryExecutor;
     private final TransactionBuffer buffer;
     private volatile boolean running = true;
 
-    public TransactionExecutor(TransactionBuffer buffer) {
+    public TransactionExecutor(TransactionBuffer buffer, QueryToAction queryExecutor) {
         this.buffer = buffer;
+        this.queryExecutor = queryExecutor;
     }
 
     @Override
@@ -20,7 +23,7 @@ public class TransactionExecutor implements Runnable {
             TransactionTask task = buffer.poll();
             if (task != null) {
                 Transaction transaction = task.getTransaction();
-                System.out.println("Выполняется транзакция: " + transaction.getTransactionId());
+                System.out.println("Transaction in progress: " + transaction.getTransactionId());
 
                 List<Result> results = this.executeTransaction(transaction);
                 buffer.completeTransaction(transaction.getTransactionId(), results);
@@ -39,7 +42,7 @@ public class TransactionExecutor implements Runnable {
     private List<Result> executeTransaction(Transaction transaction) { //test function
         List<Result> results = new ArrayList<>();
         for (int i = 0; i < transaction.getQueries().length; i++) {
-            results.add(new Result("OK"));
+            results.add(this.queryExecutor.queryRun(transaction.getQueries()[i]));
         }
 
         try {

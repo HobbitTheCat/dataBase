@@ -22,16 +22,6 @@ import TableManager.TableDescription;
  * Copyright: Semenov Egor
  */
 
-//похоже нужно каждому листу присваивать его адрес, что бы можно было бы передать лист в качестве параметра
-//при чем хранить индекс нужно в супер классе, что бы можно было в Address сменить pageNumber просто на Page, тогда можно будет еще и ти запрашивать
-//вопрос: не приведет ли это к конфликтам при создании объектов?
-//При создании класса в metaPage все остальные страницы уже созданы, но пустые, так что ок
-
-//При создании объекта objectPage нужна инфа про страницы с аттрибутами
-//При создании строки нужно дать обратную ссылку на объект - конфликт
-//Варианты решения:
-//Сначала создаем объект, в ObjectPage, а затем добавляем атрибуты.
-
 public class MetaPage extends Page implements MetaDataPage {
     /**
      * Meta info object (before parameters):
@@ -119,7 +109,7 @@ public class MetaPage extends Page implements MetaDataPage {
     public boolean deleteClassByName(String className){
         short offset = this.searchTableByName(className);
         if(offset == -1) return false; // do while delete == false or getNextPage = -1
-        this.setCursor(offset + 2); //тут переставляем для чтения количества атрибутов у класса
+        this.setCursor(offset + 2); //there rearrange to read the number of attributes of the class
         this.releaseOffset(offset, (short)(MetaPage.metaInfoSize + this.readShort() * (MetaPage.stringSize + MetaPage.linkSize)));
         return true;
     }

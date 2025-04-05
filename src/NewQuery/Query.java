@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * Name of class: Query
  * <p>
- * Description: Common patern for representing a Query, different types of query inherits from this class
+ * Description: Common pattern for representing a Query, different types of query inherits from this class
  * <p>
  * Version: 2.0
  * <p>
@@ -124,14 +124,18 @@ public abstract class Query implements Serializable {
         return this.attributeTypes.containsKey(attributeName);
     }
 
-    protected void setAttributeObject(Object object){
+    protected void setAttributeObject(Object object) {
         Class<?> clazz = object.getClass();
         if (!clazz.getName().equals(this.name)) throw new ORMUsageException("Provided class is not the same as the object class");
-        for(Field field : clazz.getDeclaredFields()){
+        for (Field field : clazz.getDeclaredFields()) {
             field.setAccessible(true);
             String fieldName = field.getName();
-            this.addAttributeNames(fieldName);
-            try{
+
+            if (!attributeNames.contains(fieldName)) {
+                this.addAttributeNames(fieldName);
+            }
+
+            try {
                 this.addAttributeValue(fieldName, field.get(object));
             } catch (IllegalAccessException e) {
                 this.addAttributeValue(fieldName, null);

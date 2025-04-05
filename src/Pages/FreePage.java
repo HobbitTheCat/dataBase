@@ -34,4 +34,9 @@ public class FreePage extends Page {
         this.getNextPage();
         return this.readInteger();
     }
+
+    public String toString(){
+        StringBuilder[] rows = new  StringBuilder[0];
+        return super.assemblyString(15, rows);
+    }
 }

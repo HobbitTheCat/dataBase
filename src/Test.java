@@ -15,18 +15,28 @@ public class Test {
     static TableManager tm = new TableManager(pm);
 
     public static void main(String[] args) {
-        TableDescription td = createTable();
+//        createTablesTest();
+
+
+//        TableDescription td = createTable();
 //        createObjects(td);
-        searchObjects(td);
+//        searchObjects(td);
 
         FilePageLoader loader = new FilePageLoader(dataPath);
         MetaPage metaPage = new MetaPage(loader.load(1), 1);
         System.out.println(metaPage);
 
+        HeaderPage hp = new HeaderPage(loader.load(0), 0);
+        System.out.println(hp);
 
-        ByteBuffer buffer = loader.load(2);
-        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
-        System.out.println(objectPage);
+//        TableDescription td = new TableDescription("Table2", new String[]{}, new HashMap<>());
+//        tm.deleteTable(td);
+
+
+//
+//        ByteBuffer buffer = loader.load(2);
+//        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
+//        System.out.println(objectPage);
 
 
 //        LongPage page = new LongPage(loader.load(3), 3);
@@ -43,6 +53,38 @@ public class Test {
         TableDescription td = new TableDescription("City", attrName, attrTypes);
         tm.createTableIfNotExist(td);
         return td;
+    }
+
+    public static void createTablesTest() {
+        List<TableDescription> tables = new ArrayList<>();
+
+        for (int i = 1; i <= 11; i++) {
+            String tableName = "Table" + i;
+            String[] attrNames = new String[10];
+            Map<String, String> attrTypes = new HashMap<>();
+
+            for (int j = 1; j <= 10; j++) {
+                String attrName = "attr" + j;
+                attrNames[j - 1] = attrName;
+
+                // Пример типов: чередуем String, Integer, Boolean, Double, Date
+                String type;
+                switch (j % 2) {
+                    case 1:
+                        type = "String";
+                        break;
+                    default:
+                        type = "Integer";
+                        break;
+                }
+
+                attrTypes.put(attrName, type);
+            }
+
+            TableDescription td = new TableDescription(tableName, attrNames, attrTypes);
+            tm.createTableIfNotExist(td);
+            tables.add(td);
+        }
     }
 
     public static void createObjects(TableDescription td){

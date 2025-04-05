@@ -2,6 +2,7 @@ package NewQuery;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 enum statusVariants{OK, ERROR, UNKNOWN};
@@ -57,4 +58,15 @@ public class Result implements Serializable {
         }
     }
 
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder("Status: ");
+        sb.append(this.status).append("\n");
+        if (status == statusVariants.OK){
+            if(objectsData != null){
+                sb.append(Arrays.toString(this.objectsData.toArray()));
+            }
+        } else sb.append("Error code: ").append(this.errorMessage);
+        return sb.toString();
+    }
 }

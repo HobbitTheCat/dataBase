@@ -1,7 +1,11 @@
 package Server;
 
+import PageManager.MemoryManager;
+import PageManager.PageManager;
+import TableManager.TableManager;
+import TableManager.QueryToAction;
+
 import java.io.*;
-import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -16,18 +20,20 @@ public class TransactionServer {
     private ExecutorService clientHandlerPool;
     private List<TransactionExecutor> executors;
     private List<Thread> executorThreads;
+    private final PageManager pageManager;
 
-    public TransactionServer(int port, int clientHandlerThreads, int executorThreadsNumber) {
+    public TransactionServer(int port, int clientHandlerThreads, int executorThreadsNumber, PageManager pageManager) {
         this.port = port;
         this.clientHandlerThreads = clientHandlerThreads;
         this.executorThreadsNumber = executorThreadsNumber;
         this.buffer = new TransactionBuffer();
+        this.pageManager = pageManager;
     }
 
     public void start() throws IOException {
         // Creating a server socket
         serverSocket = new ServerSocket(port);
-        System.out.println("Сервер запущен на порту " + port);
+        System.out.println("Server is running on port " + port);
 
         // Initialization of thread pool for client processing
         clientHandlerPool = Executors.newFixedThreadPool(clientHandlerThreads);
@@ -37,7 +43,7 @@ public class TransactionServer {
         executorThreads = new ArrayList<>(this.executorThreadsNumber);
 
         for (int i = 0; i < executorThreadsNumber; i++) {
-            TransactionExecutor executor = new TransactionExecutor(buffer);
+            TransactionExecutor executor = new TransactionExecutor(buffer, new QueryToAction(new TableManager(this.pageManager)));
             executors.add(executor);
             Thread executorThread = new Thread(executor);
             executorThreads.add(executorThread);
@@ -80,11 +86,15 @@ public class TransactionServer {
     }
 
     public static void main(String[] args) {
+        String dataPath = "finalVersion.ehh";
+        MemoryManager memoryManager = new MemoryManager(100, dataPath);
+        PageManager pageManager = new PageManager(memoryManager);
+
         int port = 8080;
         int clientHandlers = 10;
         int executors = 4;
 
-        TransactionServer server = new TransactionServer(port, clientHandlers, executors);
+        TransactionServer server = new TransactionServer(port, clientHandlers, executors, pageManager);
 
         Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
 

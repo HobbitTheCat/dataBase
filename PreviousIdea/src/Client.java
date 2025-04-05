@@ -1,5 +1,3 @@
-package NewQuery;
-
 import NewQuery.Exceptions.ClientException;
 
 import java.io.*;
@@ -45,11 +43,11 @@ public class Client implements Closeable {
         // Send transaction
         out.writeObject(transaction);
         out.flush();
-        System.out.println("Транзакция отправлена: " + transaction.getTransactionId());
+        System.out.println("Transaction sent: " + transaction.getTransactionId());
 
         // Getting the result
         List<Result> results = (List<Result>) in.readObject();
-        System.out.println("Получены результаты для транзакции: " + transaction.getTransactionId());
+        System.out.println("Results obtained for the transaction: " + transaction.getTransactionId());
 
         return results;
     }
@@ -69,7 +67,7 @@ public class Client implements Closeable {
         try (Client client = new Client(host, port)) {
             client.connect();
 
-            Transaction transaction = new Transaction(1);
+            Transaction transaction = new Transaction();
             transaction.add(Query.select(Hero.class).where("name", "==", "pedro"));
 
             List<Result> results = client.sendTransaction(transaction);

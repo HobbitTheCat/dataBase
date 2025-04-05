@@ -21,14 +21,17 @@ import java.util.Arrays;
 
 public class Transaction implements Serializable {
     private final ArrayList<Query> queries;
-    private final int transactionId;
+    private int transactionId = -1;
 
     public int getTransactionId() {return transactionId;}
     public  Query[] getQueries() {return queries.toArray(new Query[0]);}
 
-    public Transaction(int transactionId) {
-        this.transactionId = transactionId;
+    public Transaction() {
         this.queries = new ArrayList<>();
+    }
+
+    public void changeTransactionId(int newTransactionId){
+        this.transactionId = newTransactionId;
     }
 
     public void add(Select selectQuery) { this.queries.add((Query) selectQuery); }
