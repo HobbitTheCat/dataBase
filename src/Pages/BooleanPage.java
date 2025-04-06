@@ -7,6 +7,18 @@ import Pages.Interface.BackLinkPage;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+/**
+ * Name of class: BooleanPage
+ * <p>
+ * Description: Represents booleans
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/06
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class BooleanPage extends Page implements BackLinkPage<Boolean> {
     private static final short booleanSize = 1;
     private static final short metaInfoSize = Address.ADDRESS_SIZE;

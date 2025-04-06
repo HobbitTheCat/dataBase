@@ -11,6 +11,18 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
 
+/**
+ * Name of class: TransactionServer
+ * <p>
+ * Description: Takes connections from clients.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/06
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class TransactionServer {
     private final int port;
     private final int clientHandlerThreads;

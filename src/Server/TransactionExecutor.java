@@ -7,6 +7,18 @@ import TableManager.QueryToAction;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Name of class: TransactionExecutor
+ * <p>
+ * Description: Executes transactions.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/06
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class TransactionExecutor implements Runnable {
     private final QueryToAction queryExecutor;
     private final TransactionBuffer buffer;

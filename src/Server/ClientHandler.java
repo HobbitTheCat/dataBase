@@ -9,6 +9,17 @@ import java.io.*;
 import java.net.Socket;
 import java.util.*;
 
+/**
+ * Name of class: ClientHandler
+ * <p>
+ * Description: Thread that handles a client.
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/06
+ * <p>
+ * Copyright: Semenov Egor
+ */
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;

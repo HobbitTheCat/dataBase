@@ -9,6 +9,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Name of class: TransactionBuffer
+ * <p>
+ * Description: Transaction buffer
+ * <p>
+ * Version: 1.0
+ * <p>
+ * Date 04/06
+ * <p>
+ * Copyright: Semenov Egor
+ */
+
 public class TransactionBuffer {
     private final ConcurrentLinkedQueue<TransactionTask> buffer = new ConcurrentLinkedQueue<>();
     private final ConcurrentHashMap<Integer, CompletableFuture<List<Result>>> resultMap = new ConcurrentHashMap<>();
