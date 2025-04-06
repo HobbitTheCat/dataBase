@@ -499,35 +499,39 @@ public class TableManager {
             for(int i = 1; i < actualConditions.size(); i++) {
                 Condition condition = actualConditions.get(i);
                 String attributeName = condition.attributeName();
-                Iterator<Map<String, Object>> iterator = objects.iterator();
-                Iterator<Address>  iteratorToDelete = addressesToDelete.iterator();
-                while (iterator.hasNext()) {
-                    Map<String, Object> obj = iterator.next();
+
+                ArrayList<Map<String, Object>> filteredObjects = new ArrayList<>();
+                ArrayList<Address> filteredAddresses = new ArrayList<>();
+
+                for(int j = 0; j < objects.size(); j++) {
+                    Map<String, Object> obj = objects.get(j);
+                    Address addr = addressesToDelete.get(j);
                     String attributeType = deleteVictim.getAttributeType(deleteVictim.getAttributeInternalIndexByName(attributeName)).toLowerCase();
+                    boolean shouldKeep = false;
+
                     switch (attributeType){
                         case "string" -> {
-                            if (!StringPage.applyCondition((String) obj.get(attributeName), condition.operator(), (String) condition.value())) {
-                                iterator.remove();
-                                iteratorToDelete.remove();
-                            }
+                            shouldKeep = StringPage.applyCondition((String) obj.get(attributeName), condition.operator(), (String) condition.value());
                         }
                         case "integer", "int", "long", "short", "byte", "double" -> {
-                            if (!LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue())) {
-                                iterator.remove();
-                                iteratorToDelete.remove();
-                            }
+                            shouldKeep = LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue());
                         }
                         case "boolean" -> {
-                            if (!BooleanPage.applyCondition((Boolean) obj.get(attributeName), condition.operator(), (Boolean) condition.value())) {
-                                iterator.remove();
-                                iteratorToDelete.remove();
-                            }
+                            shouldKeep = BooleanPage.applyCondition((Boolean) obj.get(attributeName), condition.operator(), (Boolean) condition.value());
                         }
                         default -> {
                             throw new TableManagementException("Unknown set type: " + attributeType);
                         }
                     }
+
+                    if(shouldKeep) {
+                        filteredObjects.add(obj);
+                        filteredAddresses.add(addr);
+                    }
                 }
+
+                objects = filteredObjects;
+                addressesToDelete = filteredAddresses;
             }
 
             for(Address address : addressesToDelete){

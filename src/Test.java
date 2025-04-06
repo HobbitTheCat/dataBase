@@ -8,17 +8,16 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class Test {
-    static String dataPath = "finalVersion.ehh";
+//    static String dataPath = "finalVersion.ehh";
+    static String dataPath = "example.ehh"; //before testing you need to delete example.ehh You may not delete it, but it will create a conflict with already created objects. Unpredictable behavior
     static MemoryManager mm = new MemoryManager(10, dataPath);
     static PageManager pm = new PageManager(mm);
     static TableManager tm = new TableManager(pm);
 
     public static void main(String[] args) {
-//        createTablesTest();
-
-
-//        TableDescription td = createTable();
-//        createObjects(td);
+        TableDescription td = createTable();
+        createObjects(td);
+        deleteObjects(td);
 //        searchObjects(td);
 
         FilePageLoader loader = new FilePageLoader(dataPath);
@@ -107,5 +106,15 @@ public class Test {
         ArrayList<Map<String, Object>> map = tm.searchObject(td, conditionList);
         Map<String, Object>[] canByStringify = map.toArray(new Map[0]);
         System.out.println(Arrays.toString(canByStringify));
+    }
+
+    public static void deleteObjects(TableDescription td){
+        Condition cond1 = new Condition("name", "contains", "on");
+        Condition  cond2 = new Condition("capacity", "<", 50000);
+        ArrayList<Condition> conditionList = new ArrayList<>();
+        conditionList.add(cond1);
+        conditionList.add(cond2);
+
+        tm.deleteObject(td, conditionList);
     }
 }
