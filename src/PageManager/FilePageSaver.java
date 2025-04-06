@@ -40,7 +40,7 @@ public class FilePageSaver implements MemoryManager.PageSaver{
         try (RandomAccessFile file = new RandomAccessFile(filePath, "rw")) {
             long expectedSize = ((long) totalPage + 1) * pageSize;
             if (file.length() < expectedSize) {
-                file.setLength(expectedSize); // OS-level увеличение файла
+                file.setLength(expectedSize); // OS-level file expanding
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

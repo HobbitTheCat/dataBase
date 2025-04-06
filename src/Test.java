@@ -6,10 +6,9 @@ import TableManager.*;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Test {
-    static String dataPath = "example.ehh";
+    static String dataPath = "finalVersion.ehh";
     static MemoryManager mm = new MemoryManager(10, dataPath);
     static PageManager pm = new PageManager(mm);
     static TableManager tm = new TableManager(pm);
@@ -34,9 +33,9 @@ public class Test {
 
 
 //
-//        ByteBuffer buffer = loader.load(2);
-//        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
-//        System.out.println(objectPage);
+        ByteBuffer buffer = loader.load(2);
+        ObjectPage objectPage = new ObjectPage(buffer, buffer.getShort(8), 2);
+        System.out.println(objectPage);
 
 
 //        LongPage page = new LongPage(loader.load(3), 3);
@@ -67,7 +66,6 @@ public class Test {
                 String attrName = "attr" + j;
                 attrNames[j - 1] = attrName;
 
-                // Пример типов: чередуем String, Integer, Boolean, Double, Date
                 String type;
                 switch (j % 2) {
                     case 1:

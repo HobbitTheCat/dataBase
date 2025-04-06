@@ -160,7 +160,6 @@ public class MemoryManager {
             FreePage freePage = new FreePage(page.getPageNumber());
             freePage.setNextFreePage(freePageIndex);
 
-//            page.setData(freePage.getData()); // не будет работать
             this.exchangePage(freePage);
             header.setFirstFree(freePage.getPageNumber());
             this.markDirty(freePage.getPageNumber());

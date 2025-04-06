@@ -36,7 +36,7 @@ public class Page {
     public short getType(){return this.data.getShort(0);}
     public int getPageNumber(){return this.pageNumber;}
     public int getNextPage(){return this.data.getInt(2);}
-    private short getFirstFreeInternal(){return this.data.getShort(6);}//эту функцию нужно упразднить
+    private short getFirstFreeInternal(){return this.data.getShort(6);}
     protected short getFirstFree(){return (short)(this.data.getShort(6) - Page.metaInfoSize);}
 
     protected int getIndexByOffset(int offset){return offset/this.dataSize;}
@@ -45,7 +45,7 @@ public class Page {
     /**
      * Setters
      */
-    private void setFirstFree(short firstFree){this.data.putShort(6, (short)(firstFree));}// ну первое, что приходит в голову, можно просто отсюда мета информацию вычесть
+    private void setFirstFree(short firstFree){this.data.putShort(6, (short)(firstFree));}
     public void setNextPage(int page){this.data.putInt(2, page);}
 
     protected void setCursor(int cursor){
@@ -67,7 +67,6 @@ public class Page {
     protected int readInteger(){return this.data.getInt();}
     protected long readLong(){return this.data.getLong();}
     protected short readShort(){return this.data.getShort();}
-//    protected Address readAddress(){return new Address(this.readInteger(), this.readShort());}
 
     /**
      * Write
@@ -76,10 +75,6 @@ public class Page {
     protected void writeLong(long value){this.data.putLong(value);}
     protected void writeShort(short value){this.data.putShort(value);}
     protected void writeBytes(byte[] value){this.data.put(value);}
-//    protected void writeAddress(Address address){
-//        this.data.putInt(address.getPageNumber());
-//        this.data.putShort(address.getOffset());
-//    }
 
     /**
      * Constructors
@@ -128,7 +123,7 @@ public class Page {
      */
     protected short getNextFreeOffset(int sizeNeeded) {
         short freeOffset = getFirstFreeInternal();
-        if (freeOffset < 0 || freeOffset + 4 > Page.pageSize) return -1; //нужно везде добавить выброс ошибки Not Enough Space on Page
+        if (freeOffset < 0 || freeOffset + 4 > Page.pageSize) return -1;
         while (freeOffset != -1) {
             if (freeOffset + 4 > Page.pageSize) return -1;
             short size = this.data.getShort(freeOffset + 2);

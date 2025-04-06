@@ -130,7 +130,7 @@ public class VirtualMemoryManagerV2_0 {
 
             boolean modified = false;
             int attempts = 0;
-            while (!modified && attempts < 5) { // Ограничиваем количество попыток
+            while (!modified && attempts < 5) {
                 DataWrapper pageToDelete = this.loadPage(pageIndex);
                 pageToDelete.replacePage(freePage.getData());
                 modified = this.modifyPage(pageIndex, pageToDelete);

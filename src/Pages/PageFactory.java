@@ -22,6 +22,7 @@ public class PageFactory {
             case 1 -> {yield new ObjectPage(buffer, buffer.getShort(8), pageIndex);}
             case 2 -> {yield new StringPage(buffer, pageIndex);}
             case 3 -> {yield new LongPage(buffer, pageIndex);}
+            case 4 -> {yield new BooleanPage(buffer, pageIndex);}
             case 99 -> {yield  new FreePage(buffer, pageIndex);}
             case 100 -> {yield  new HeaderPage(buffer, pageIndex);}
             default -> throw new IllegalArgumentException("Unknown PageType: " + type);

@@ -87,6 +87,7 @@ public abstract class Page {
     protected int readInteger(){return this.data.getInt();}
     protected long readLong(){return this.data.getLong();}
     protected short readShort(){return this.data.getShort();}
+    protected boolean readBoolean(){return this.data.get() == 1;}
     protected Address readAddress(){return new Address(this.readInteger(), this.readShort());}
 
     /**
@@ -101,6 +102,7 @@ public abstract class Page {
         this.data.putShort(address.getOffset());
         this.setDirty();
     }
+    protected void writeBoolean(boolean value){if (value) this.data.put((byte) 1); else this.data.put((byte)0);}
 
     /**
      *Constructors
@@ -245,7 +247,7 @@ public abstract class Page {
         }else this.setCursor(offset + 4);
     }
     protected void releaseOffset(short offset, short customDataSize){
-//        System.out.println("Освобождаем " +  offset + " с размером "+ customDataSize);
+//        System.out.println("Free " +  offset + " with size "+ customDataSize);
         this.dataSize = customDataSize;
         this.releaseOffset(offset);
     }

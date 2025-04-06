@@ -2,6 +2,7 @@ import Pages.*;
 import TableManager.TableDescription;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,22 +10,9 @@ import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) {
-//        stringPageTest();
+        stringPageTest();
 //        objectPageTest();
-        metaPageTest();
-
-//        int[] test = new int[4];
-//        int test;
-//        System.out.println(test);
-
-//        Boat boat = new Boat("Bismark", 72);
-//        System.out.println(getFieldTypesMap(Boat.class));
-
-    }
-
-    public static Map<String, String> getFieldTypesMap(Class<?> clazz) {
-        return Arrays.stream(clazz.getDeclaredFields())
-                .collect(Collectors.toMap(Field::getName, field -> field.getType().getSimpleName()));
+//        metaPageTest();
     }
 
     public static void metaPageTest(){

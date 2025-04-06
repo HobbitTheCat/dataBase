@@ -20,6 +20,9 @@ import java.util.Map;
 public class SelectQuery extends Query implements Serializable, Select {
     public SelectQuery(String className, Map<String, String> fieldTypes) {
         super(className, command.READ, fieldTypes);
+        for (String fieldName : fieldTypes.keySet()) {
+            super.addAttributeNames(fieldName);
+        }
     }
 
     @Override

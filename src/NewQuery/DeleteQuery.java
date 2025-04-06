@@ -20,6 +20,9 @@ import java.util.Map;
 public class DeleteQuery extends Query implements Select, Serializable {
     public DeleteQuery(String className, Map<String, String> fieldTypes) {
         super(className, command.DELETE, fieldTypes);
+        for (String fieldName : fieldTypes.keySet()) {
+            super.addAttributeNames(fieldName);
+        }
     }
 
     @Override

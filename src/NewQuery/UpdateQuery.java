@@ -24,6 +24,9 @@ public class UpdateQuery extends Query implements Serializable, Update {
 
     public UpdateQuery(String className, Map<String, String>  fieldTypes) {
         super(className, command.UPDATE, fieldTypes);
+        for (String fieldName : fieldTypes.keySet()) {
+            super.addAttributeNames(fieldName);
+        }
     }
 
     public UpdateQuery where(String attrName, String operator, Object value) {

@@ -130,7 +130,7 @@ public class PageCopy {
      */
     protected short getNextFreeOffset(int sizeNeeded) {
         short freeOffset = getFirstFree();
-        if (freeOffset < 0 || freeOffset + 4 > PageCopy.pageSize) return -1; //нужно везде добавить выброс ошибки Not Enough Space on Page
+        if (freeOffset < 0 || freeOffset + 4 > PageCopy.pageSize) return -1;
         while (freeOffset != -1) {
             if (freeOffset + 4 > PageCopy.pageSize) return -1;
             this.setCursor(freeOffset+2);

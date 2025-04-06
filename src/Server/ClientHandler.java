@@ -27,11 +27,12 @@ public class ClientHandler implements Runnable {
         ) {
             // Reading a transaction from a client
             Transaction transaction = (Transaction) in.readObject();
-            System.out.println("Transaction received: " + transaction.getTransactionId());
 
             // Creating a task and adding it to the buffer
             TransactionTask task = new TransactionTask(transaction);
             buffer.add(task);
+
+            System.out.println("Transaction received: " + transaction.getTransactionId());
 
             // Expectation of results
             List<Result> results = task.getResultFuture().get();

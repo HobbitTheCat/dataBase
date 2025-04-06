@@ -68,7 +68,7 @@ public class ObjectPage extends Page implements DataPage<Address[]> {
     }
 
     public int allocate(){
-        short freeAddress = this.getNextFreeOffset(this.objectLength*ObjectPage.linkSize); // очень внимательно проверить все что связано с this.objectLength() и super.size или как оно там
+        short freeAddress = this.getNextFreeOffset(this.objectLength*ObjectPage.linkSize);
         if (freeAddress == -1) return -1;
         return this.getIndexByOffset(freeAddress);
     }

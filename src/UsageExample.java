@@ -1,4 +1,7 @@
-package NewQuery;
+import NewQuery.Query;
+import NewQuery.Result;
+import NewQuery.Session;
+import NewQuery.Transaction;
 
 import java.util.List;
 
@@ -12,10 +15,10 @@ public class UsageExample {
         try(Session session = new Session(host, port)) {
             Transaction transaction = session.createNewTransaction();
             transaction.add(Query.create(Hero.class));
-//            transaction.add(Query.select(Hero.class).where("name", "==", "Tommy Sharp").where("age", ">", 35).all());
-//            transaction.add(Query.create(Hero.class).object(hero));
+            transaction.add(Query.select(Hero.class).where("name", "==", "Tommy Sharp").where("age", ">", 35).all());
+            transaction.add(Query.create(Hero.class).object(hero));
 //            transaction.add(Query.update(Hero.class).where("name", "contains", "Pedro").set("name", "Pedro Ivanov"));
-//            transaction.add(Query.delete(Hero.class).where("name", "=", "tommy sharp"));
+            transaction.add(Query.delete(Hero.class).where("name", "=", "tommy sharp"));
             System.out.println(transaction);
             System.out.println(transaction.getQueries()[0].getAttributeValues().isEmpty());
             List<Result> results = session.execute(transaction);
@@ -49,4 +52,9 @@ class Hero{
         this.secretName = secretName;
         this.age = age;
     }
+}
+
+class Pen{
+    String color;
+    int price;
 }

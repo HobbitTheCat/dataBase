@@ -96,6 +96,9 @@ public abstract class Query implements Serializable {
             case "Integer", "Byte", "Long", "Short", "Float" -> {
                 return (operator.equals("==") || operator.equals(">") || operator.equals("<") || operator.equals(">=") || operator.equals("<=") || operator.equals("!="));
             }
+            case "Boolean" -> {
+                return (operator.equals("==") || operator.equals("!="));
+            }
             default -> {
                 throw new IllegalArgumentException("Unsupported set type: " + attributeType);
             }
@@ -110,6 +113,7 @@ public abstract class Query implements Serializable {
             case "Long", "long" -> { return value instanceof Long;}
             case "Short", "short" -> { return value instanceof Short;}
             case "Float", "float" -> { return value instanceof Float;}
+            case "Boolean", "boolean" -> { return value instanceof Boolean;}
             default -> {
                 throw new IllegalArgumentException("Unsupported set type: " + attributeType);
             }

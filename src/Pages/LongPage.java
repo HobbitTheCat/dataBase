@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 public class LongPage extends Page implements BackLinkPage<Long> {
     private static final short integerSize = 8;
-    private static final short metaInfoSize = 6;
+    private static final short metaInfoSize = Address.ADDRESS_SIZE;
     private static final short totalSize = integerSize + metaInfoSize;
     private static final short type = 3;
 
@@ -75,7 +75,7 @@ public class LongPage extends Page implements BackLinkPage<Long> {
         if (freeAddress < 0) return -1;
         this.writeAddress(objectAddress);
         this.writeLong(value);
-        return getIndexByOffset(freeAddress);
+        return this.getIndexByOffset(freeAddress);
     }
 
     @Override

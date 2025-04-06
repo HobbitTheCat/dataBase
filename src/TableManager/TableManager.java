@@ -139,6 +139,11 @@ public class TableManager {
                 pageNumber -> new LongPage(pageNumber));
     }
 
+    private Address insertIntoBoolPage(BooleanPage page, Boolean boolValue, Address backAddress) {
+        return insertIntoBackLinkPage(page, boolValue, backAddress,
+                pageNumber -> new BooleanPage(pageNumber));
+    }
+
 
     /**
      * Value search functions on pages
@@ -152,6 +157,8 @@ public class TableManager {
                     returnAddresses.addAll(((StringPage) page).search(condition)); break;
                 case 3:
                     returnAddresses.addAll(((LongPage) page).search(condition)); break;
+                case 4:
+                    returnAddresses.addAll(((BooleanPage) page).search(condition)); break;
                 default: throw new TableManagementException("Unknown set type: " + page.getType());
             }
             int nextPageIndex = page.getNextPage();
@@ -181,6 +188,9 @@ public class TableManager {
                         LongPage longPage = (LongPage) oneOfNeededPage;
                         returnMap.put(classThatWeTryToRestore.getAttributeName(i), longPage.get(addresses[i].getOffset()));
                         break;
+                    case 4:
+                        BooleanPage booleanPage = (BooleanPage) oneOfNeededPage;
+                        returnMap.put(classThatWeTryToRestore.getAttributeName(i), booleanPage.get(addresses[i].getOffset()));
                     default:
                         throw new TableManagementException("I don't know how page of type " + oneOfNeededPage.getType() + " was found here");
                 }
@@ -210,7 +220,7 @@ public class TableManager {
         boolean[] alreadyDeleted = new boolean[addresses.length];
         try {
             for (int i = 0; i < addresses.length; i++) {
-                if (addresses[i].isNull()) {
+                if (!addresses[i].isNull()) {
                     Page oneOfNeededPage = this.acquirePage(addresses[i].getPageNumber());
                     switch (oneOfNeededPage.getType()) {
                         case 2 -> {
@@ -220,6 +230,10 @@ public class TableManager {
                         case 3 -> {
                             LongPage longPage = (LongPage) oneOfNeededPage;
                             longPage.delete(addresses[i].getOffset());
+                        }
+                        case 4 -> {
+                            BooleanPage booleanPage = (BooleanPage) oneOfNeededPage;
+                            booleanPage.delete(addresses[i].getOffset());
                         }
                         default ->
                                 throw new TableManagementException("I don't know how page of type " + oneOfNeededPage.getType());
@@ -287,6 +301,11 @@ public class TableManager {
                         LongPage longPage = new LongPage(pageNumber);
                         this.pageManager.exchangePage(oldPage, longPage);
                     }
+                    case "boolean" -> {
+                        oldPage = pages.get(i);
+                        BooleanPage booleanPage = new BooleanPage(pageNumber);
+                        this.pageManager.exchangePage(oldPage, booleanPage);
+                    }
                     default -> throw new TableManagementException("Unknown set type: " + newTable.getAttributesTypes()[i]);
                 }
                 newTable.setAttributesPage(i, pageNumber);
@@ -342,7 +361,7 @@ public class TableManager {
             if(acquiredPages.size() < pageNeeded.length) { //error
                 ObjectPage objectPage = (ObjectPage) this.acquirePage(addressOfNewObject.getPageNumber());
                 objectPage.delete(addressOfNewObject.getOffset());
-                throw new TableManagementException("Attribute page can't be allocated");
+                throw new TableManagementException("Attribute page can't be allocated content is too long");
             }
 
             Map<Integer, Page> acquiredPagesMap = new HashMap<>(acquiredPages.size()); //map -> order ensured
@@ -365,6 +384,9 @@ public class TableManager {
                             }
                             case "integer", "int", "long", "short", "byte" -> { //not sure about double
                                 address = this.insertIntoLongPage((LongPage) page, ((Number) value).longValue(), addressOfNewObject);
+                            }
+                            case "boolean" -> {
+                                address = this.insertIntoBoolPage( (BooleanPage) page, (Boolean) value, addressOfNewObject);
                             }
                             default -> {
                                 throw new TableManagementException("Unknown set type: " + attributeType);
@@ -427,6 +449,9 @@ public class TableManager {
                         case "integer", "int", "long", "short", "byte", "double" -> {
                             if (!LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue())) iterator.remove();
                         }
+                        case "boolean" -> {
+                            if (!BooleanPage.applyCondition((Boolean) obj.get(attributeName), condition.operator(), (Boolean) condition.value())) iterator.remove();
+                        }
                         default -> {
                             throw new TableManagementException("Unknown set type: " + attributeType);
                         }
@@ -488,6 +513,12 @@ public class TableManager {
                         }
                         case "integer", "int", "long", "short", "byte", "double" -> {
                             if (!LongPage.applyCondition(((Number) obj.get(attributeName)).longValue(), condition.operator(), ((Number)condition.value()).longValue())) {
+                                iterator.remove();
+                                iteratorToDelete.remove();
+                            }
+                        }
+                        case "boolean" -> {
+                            if (!BooleanPage.applyCondition((Boolean) obj.get(attributeName), condition.operator(), (Boolean) condition.value())) {
                                 iterator.remove();
                                 iteratorToDelete.remove();
                             }
