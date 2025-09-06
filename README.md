@@ -128,8 +128,8 @@ class Hero {
 ---
 
 ## 👥 Authors
-- Egor Semenov-Tyan-Shanskiy — Backend, Frontend, Documentation
-- Mathieu Lemain — Interpreter, Frontend, Documentation
+- [Semenov Egor](https://github.com/HobbitTheCat)  — Backend, Frontend, Documentation
+- [Mathieu Lemain](https://github.com/PixelShadow) — Interpreter, Frontend, Documentation
 
 ## 📂 [GitHub](https://github.com/HobbitTheCat/dataBase/tree/master)
 
